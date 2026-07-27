@@ -6,10 +6,10 @@ export default defineConfig({
     monkey({
       entry: 'src/main.ts',
       userscript: {
-        name: 'BIMTK 增强',
+        name: 'HHJGBIM_Enhance',
         namespace: 'http://tampermonkey.net/',
-        version: '1.0',
-        description: 'BIMTK 增强脚本 by 江西华泓精工',
+        version: '0.1.0',
+        description: '华泓精工比姆泰克增强脚本 by 江西华泓精工',
         match: ['*://*.bimtk.com/*'],
         grant: ['GM_xmlhttpRequest'],
         connect: ['integ-plat-proj-api.bimtk.com'],

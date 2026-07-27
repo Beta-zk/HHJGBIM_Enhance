@@ -17,7 +17,7 @@ export class ProjectInventoryEnhance {
                         item.Status_Name = null;
                     }
                 });
-                console.log(`[BIMTK 拦截器] A请求渲染前拦截成功，已动态注入 ${modifiedCount} 条 Status_Name 数据！`);
+                console.log(`[HHJGBIM_Enhance] ‘项目库存统计‘ 请求渲染前拦截成功，已动态注入 ${modifiedCount} 条 Status_Name 数据！`);
             }
             return responseData;
         } catch (error) {
