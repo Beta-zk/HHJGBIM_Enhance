@@ -1,5 +1,6 @@
 import { WAREHOUSE_DATA_STATS_URL } from '../config/constants';
-import { projectStatusService } from '../services/ProjectStatusService';
+// 核心修改：引入重命名后的 service
+import { projectStateService } from '../services/ProjectStateService'; 
 import { findArrayWithKey } from '../utils/helpers';
 import { BimProjectItem } from '../types';
 
@@ -10,14 +11,15 @@ export class ProjectInventoryEnhance {
             if (dataLayer && dataLayer.length > 0) {
                 let modifiedCount = 0;
                 dataLayer.forEach(item => {
-                    if (item && item.Project_Name && projectStatusService.projectStatusMap.has(item.Project_Name)) {
-                        item.Status_Name = projectStatusService.projectStatusMap.get(item.Project_Name)!;
+                    // 核心修改：替换为 projectStateMap 并赋值给 State_Name
+                    if (item && item.Project_Name && projectStateService.projectStateMap.has(item.Project_Name)) {
+                        item.State_Name = projectStateService.projectStateMap.get(item.Project_Name)!;
                         modifiedCount++;
-                    } else if (item && item.Project_Name && item.Status_Name === undefined) {
-                        item.Status_Name = null;
+                    } else if (item && item.Project_Name && item.State_Name === undefined) {
+                        item.State_Name = null;
                     }
                 });
-                console.log(`[HHJGBIM_Enhance] ‘项目库存统计‘ 请求渲染前拦截成功，已动态注入 ${modifiedCount} 条 Status_Name 数据！`);
+                console.log(`[HHJGBIM_Enhance] ‘项目库存统计‘ 请求渲染前拦截成功，已动态注入 ${modifiedCount} 条 State_Name 数据！`);
             }
             return responseData;
         } catch (error) {
@@ -33,7 +35,7 @@ export class ProjectInventoryEnhance {
     private hijackXHR(): void {
         const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
         XMLHttpRequest.prototype.setRequestHeader = function(header: string, value: string) {
-            projectStatusService.updateHeaders(header, value);
+            projectStateService.updateHeaders(header, value);
             return originalSetRequestHeader.apply(this, [header, value]);
         };
 
@@ -63,7 +65,8 @@ export class ProjectInventoryEnhance {
             });
 
             if (url.includes(WAREHOUSE_DATA_STATS_URL)) {
-                projectStatusService.ensureProjectStatusSynced().then(() => { originalXHRSend.apply(this, args as any); });
+                // 核心修改：调用重命名后的方法 ensureProjectStateSynced
+                projectStateService.ensureProjectStateSynced().then(() => { originalXHRSend.apply(this, args as any); });
             } else {
                 originalXHRSend.apply(this, args as any);
             }
@@ -80,12 +83,13 @@ export class ProjectInventoryEnhance {
             if (options.headers) {
                 const h = new Headers(options.headers);
                 h.forEach((value, key) => {
-                    projectStatusService.updateHeaders(key, value);
+                    projectStateService.updateHeaders(key, value);
                 });
             }
 
             if (requestUrl.includes(WAREHOUSE_DATA_STATS_URL)) {
-                await projectStatusService.ensureProjectStatusSynced();
+                // 核心修改：调用重命名后的方法 ensureProjectStateSynced
+                await projectStateService.ensureProjectStateSynced();
                 const response = await originalFetch.apply(this, args as any);
                 const cloneRes = response.clone();
                 try {

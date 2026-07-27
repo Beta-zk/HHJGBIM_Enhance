@@ -4,9 +4,9 @@ import { PlmEntityItem } from '../types';
 
 declare const GM_xmlhttpRequest: any;
 
-class ProjectStatusService {
+class ProjectStateService {
 
-    public projectStatusMap = new Map<string, string>();
+    public projectStateMap = new Map<string, string>();
     
     public dynamicHeaders: Record<string, string> = {
         "Content-Type": "application/json; charset=utf-8",
@@ -22,7 +22,7 @@ class ProjectStatusService {
         }
     }
 
-    public ensureProjectStatusSynced(): Promise<boolean> {
+    public ensureProjectStateSynced(): Promise<boolean> {
         if (this.syncPromiseInstance) return this.syncPromiseInstance;
 
         this.syncPromiseInstance = new Promise((resolve) => {
@@ -40,10 +40,10 @@ class ProjectStatusService {
                             if (items && items.length > 0) {
                                 items.forEach(item => {
                                     if (item?.Short_Name && item.State_Name !== undefined) {
-                                        this.projectStatusMap.set(item.Short_Name, item.State_Name);
+                                        this.projectStateMap.set(item.Short_Name, item.State_Name);
                                     }
                                 });
-                                showToast(`✅ 已同步 ${this.projectStatusMap.size} 条项目状态`);
+                                showToast(`✅ 已同步 ${this.projectStateMap.size} 条项目状态`);
                             } else {
                                 showToast(`⚠️ 未找到有效的项目状态数据`, false);
                             }
@@ -66,4 +66,4 @@ class ProjectStatusService {
     }
 }
 
-export const projectStatusService = new ProjectStatusService();
+export const projectStateService = new ProjectStateService();

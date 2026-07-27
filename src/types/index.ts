@@ -1,6 +1,6 @@
 export interface BimProjectItem {
     Project_Name?: string;
-    Status_Name?: string | null;
+    State_Name?: string | null;
     [key: string]: any;
 }
 
