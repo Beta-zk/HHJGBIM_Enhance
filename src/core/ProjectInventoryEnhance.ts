@@ -1,17 +1,17 @@
 import { WAREHOUSE_DATA_STATS_URL } from '../config/constants';
-import { dictionaryService } from '../services/DictionaryService';
+import { projectStatusService } from '../services/ProjectStatusService';
 import { findArrayWithKey } from '../utils/helpers';
 import { BimProjectItem } from '../types';
 
-export class Interceptor {
+export class ProjectInventoryEnhance {
     private injectTargetData(responseData: any): any {
         try {
             const dataLayer = findArrayWithKey(responseData, 'Project_Name') as BimProjectItem[];
             if (dataLayer && dataLayer.length > 0) {
                 let modifiedCount = 0;
                 dataLayer.forEach(item => {
-                    if (item && item.Project_Name && dictionaryService.statusDictionary.has(item.Project_Name)) {
-                        item.Status_Name = dictionaryService.statusDictionary.get(item.Project_Name)!;
+                    if (item && item.Project_Name && projectStatusService.projectStatusMap.has(item.Project_Name)) {
+                        item.Status_Name = projectStatusService.projectStatusMap.get(item.Project_Name)!;
                         modifiedCount++;
                     } else if (item && item.Project_Name && item.Status_Name === undefined) {
                         item.Status_Name = null;
@@ -33,7 +33,7 @@ export class Interceptor {
     private hijackXHR(): void {
         const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
         XMLHttpRequest.prototype.setRequestHeader = function(header: string, value: string) {
-            dictionaryService.updateHeaders(header, value);
+            projectStatusService.updateHeaders(header, value);
             return originalSetRequestHeader.apply(this, [header, value]);
         };
 
@@ -63,7 +63,7 @@ export class Interceptor {
             });
 
             if (url.includes(WAREHOUSE_DATA_STATS_URL)) {
-                dictionaryService.ensureDictReady().then(() => { originalXHRSend.apply(this, args as any); });
+                projectStatusService.ensureProjectStatusSynced().then(() => { originalXHRSend.apply(this, args as any); });
             } else {
                 originalXHRSend.apply(this, args as any);
             }
@@ -80,12 +80,12 @@ export class Interceptor {
             if (options.headers) {
                 const h = new Headers(options.headers);
                 h.forEach((value, key) => {
-                    dictionaryService.updateHeaders(key, value);
+                    projectStatusService.updateHeaders(key, value);
                 });
             }
 
             if (requestUrl.includes(WAREHOUSE_DATA_STATS_URL)) {
-                await dictionaryService.ensureDictReady();
+                await projectStatusService.ensureProjectStatusSynced();
                 const response = await originalFetch.apply(this, args as any);
                 const cloneRes = response.clone();
                 try {

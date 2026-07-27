@@ -4,13 +4,16 @@ import { PlmEntityItem } from '../types';
 
 declare const GM_xmlhttpRequest: any;
 
-class DictionaryService {
-    public statusDictionary = new Map<string, string>();
+class ProjectStatusService {
+
+    public projectStatusMap = new Map<string, string>();
+    
     public dynamicHeaders: Record<string, string> = {
         "Content-Type": "application/json; charset=utf-8",
         "Accept": "application/json, text/plain, */*"
     };
-    private dictReadyPromiseInstance: Promise<boolean> | null = null;
+    
+    private syncPromiseInstance: Promise<boolean> | null = null;
 
     public updateHeaders(key: string, value: string): void {
         const lowerKey = key.toLowerCase();
@@ -19,10 +22,10 @@ class DictionaryService {
         }
     }
 
-    public ensureDictReady(): Promise<boolean> {
-        if (this.dictReadyPromiseInstance) return this.dictReadyPromiseInstance;
+    public ensureProjectStatusSynced(): Promise<boolean> {
+        if (this.syncPromiseInstance) return this.syncPromiseInstance;
 
-        this.dictReadyPromiseInstance = new Promise((resolve) => {
+        this.syncPromiseInstance = new Promise((resolve) => {
             GM_xmlhttpRequest({
                 method: "POST",
                 url: PLM_PROJECT_ENTITIES_URL,
@@ -36,30 +39,31 @@ class DictionaryService {
 
                             if (items && items.length > 0) {
                                 items.forEach(item => {
-                                    if (item && item.Short_Name && item.State_Name !== undefined) {
-                                        this.statusDictionary.set(item.Short_Name, item.State_Name);
+                                    if (item?.Short_Name && item.State_Name !== undefined) {
+                                        this.projectStatusMap.set(item.Short_Name, item.State_Name);
                                     }
                                 });
-                                showToast(`✅ 拦截器就绪：已同步 ${this.statusDictionary.size} 条状态字典`);
+                                showToast(`✅ 已同步 ${this.projectStatusMap.size} 条项目状态`);
                             } else {
-                                showToast(`⚠️ 拦截器警告：未在C请求中找到数据`, false);
+                                showToast(`⚠️ 未找到有效的项目状态数据`, false);
                             }
-                        } catch (error) {
-                            showToast(`❌ 拦截器异常：C请求响应解析失败`, false);
+                        } catch {
+                            showToast(`❌ 项目状态响应解析失败`, false);
                         }
                     } else {
-                        showToast(`❌ 拦截器异常：C请求被拒绝 (HTTP ${response.status})`, false);
+                        showToast(`❌ 项目状态请求失败 (HTTP ${response.status})`, false);
                     }
                     resolve(true);
                 },
                 onerror: () => {
-                    showToast(`❌ 拦截器异常：网络异常或跨域阻止`, false);
+                    showToast(`❌ 网络异常或跨域受阻`, false);
                     resolve(true);
                 }
             });
         });
-        return this.dictReadyPromiseInstance;
+
+        return this.syncPromiseInstance;
     }
 }
 
-export const dictionaryService = new DictionaryService();
+export const projectStatusService = new ProjectStatusService();

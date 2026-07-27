@@ -1,11 +1,10 @@
-import { Interceptor } from './core/Interceptor';
+import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
 
 (function() {
     'use strict';
     console.log('[HHJGBIM_Enhance] 初始化引擎...');
     
-    const interceptor = new Interceptor();
-    interceptor.init();
+    new ProjectInventoryEnhance().init();
     
     console.log('[HHJGBIM_Enhance] 拦截器挂载完毕。');
 })();
