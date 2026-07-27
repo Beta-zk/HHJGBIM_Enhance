@@ -1,4 +1,4 @@
-import { URL_C_SOURCE, DEFAULT_REQUEST_PAYLOAD } from '../config/constants';
+import { PLM_PROJECT_ENTITIES_URL, DEFAULT_REQUEST_PAYLOAD } from '../config/constants';
 import { findArrayWithKey, showToast } from '../utils/helpers';
 import { PlmEntityItem } from '../types';
 
@@ -25,7 +25,7 @@ class DictionaryService {
         this.dictReadyPromiseInstance = new Promise((resolve) => {
             GM_xmlhttpRequest({
                 method: "POST",
-                url: URL_C_SOURCE,
+                url: PLM_PROJECT_ENTITIES_URL,
                 headers: this.dynamicHeaders,
                 data: JSON.stringify(DEFAULT_REQUEST_PAYLOAD),
                 onload: (response: any) => {

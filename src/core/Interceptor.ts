@@ -1,4 +1,4 @@
-import { URL_A_TARGET } from '../config/constants';
+import { WAREHOUSE_DATA_STATS_URL } from '../config/constants';
 import { dictionaryService } from '../services/DictionaryService';
 import { findArrayWithKey } from '../utils/helpers';
 import { BimProjectItem } from '../types';
@@ -51,7 +51,7 @@ export class Interceptor {
 
             this.addEventListener('readystatechange', function() {
                 if (this.readyState === 4 && this.status >= 200 && this.status < 300) {
-                    if (((this as any)._requestUrl || '').includes(URL_A_TARGET)) {
+                    if (((this as any)._requestUrl || '').includes(WAREHOUSE_DATA_STATS_URL)) {
                         try {
                             const json = JSON.parse(this.responseText);
                             const modifiedJson = self.injectTargetData(json);
@@ -62,7 +62,7 @@ export class Interceptor {
                 }
             });
 
-            if (url.includes(URL_A_TARGET)) {
+            if (url.includes(WAREHOUSE_DATA_STATS_URL)) {
                 dictionaryService.ensureDictReady().then(() => { originalXHRSend.apply(this, args as any); });
             } else {
                 originalXHRSend.apply(this, args as any);
@@ -84,7 +84,7 @@ export class Interceptor {
                 });
             }
 
-            if (requestUrl.includes(URL_A_TARGET)) {
+            if (requestUrl.includes(WAREHOUSE_DATA_STATS_URL)) {
                 await dictionaryService.ensureDictReady();
                 const response = await originalFetch.apply(this, args as any);
                 const cloneRes = response.clone();
