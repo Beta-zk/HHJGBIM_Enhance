@@ -8,7 +8,7 @@ export default defineConfig({
       userscript: {
         name: 'HHJGBIM_Enhance',
         namespace: 'http://tampermonkey.net/',
-        version: '0.1.2',
+        version: '0.1.4',
         description: '华泓精工比姆泰克增强脚本 by 江西华泓精工',
         match: ['*://*.bimtk.com/*'],
         grant: ['GM_xmlhttpRequest'],

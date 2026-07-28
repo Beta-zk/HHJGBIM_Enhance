@@ -1,5 +1,5 @@
 import { LOGIN_URL } from '../config/constants';
-import { projectStateService } from '../services/ProjectStateService';
+import { authService } from '../services/AuthService';
 
 export class AuthInterceptor {
     public init(): void {
@@ -11,7 +11,7 @@ export class AuthInterceptor {
     private hijackXHR(): void {
         const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
         XMLHttpRequest.prototype.setRequestHeader = function(header: string, value: string) {
-            projectStateService.updateHeaders(header, value);
+            authService.updateHeaders(header, value);
             return originalSetRequestHeader.apply(this, [header, value]);
         };
 
@@ -29,7 +29,7 @@ export class AuthInterceptor {
                 if (this.readyState === 4 && this.status >= 200 && this.status < 300) {
                     if (url.includes(LOGIN_URL)) {
                         const token = this.getResponseHeader('Authorization');
-                        if (token) projectStateService.setAuthToken(token);
+                        if (token) authService.setAuthToken(token);
                     }
                 }
             });
@@ -44,7 +44,6 @@ export class AuthInterceptor {
             let requestUrl = '';
             let headersObj: Headers | null = null;
 
-            // 核心修复：兼容 fetch(new Request(url, options)) 与常规 fetch 写法
             if (args[0] instanceof Request) {
                 requestUrl = args[0].url;
                 headersObj = args[0].headers;
@@ -57,7 +56,7 @@ export class AuthInterceptor {
 
             if (headersObj) {
                 headersObj.forEach((value, key) => {
-                    projectStateService.updateHeaders(key, value);
+                    authService.updateHeaders(key, value);
                 });
             }
 
@@ -65,7 +64,7 @@ export class AuthInterceptor {
             
             if (requestUrl.includes(LOGIN_URL) && response.ok) {
                 const token = response.headers.get('Authorization');
-                if (token) projectStateService.setAuthToken(token);
+                if (token) authService.setAuthToken(token);
             }
             
             return response;

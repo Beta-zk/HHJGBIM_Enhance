@@ -1,27 +1,42 @@
 import { WAREHOUSE_DATA_STATS_URL } from '../config/constants';
-import { projectStateService } from '../services/ProjectStateService'; 
+import { projectService } from '../services/ProjectService'; 
 import { findArrayWithKey } from '../utils/helpers';
-import { BimProjectItem } from '../types';
+import { BimProjectItem, PlmEntityItem } from '../types';
 
 export class ProjectInventoryEnhance {
-    private injectTargetData(responseData: any): any {
+    
+    private injectTargetData(warehouseJson: any, plmJson: any): any {
         try {
-            const dataLayer = findArrayWithKey(responseData, 'Project_Name') as BimProjectItem[];
-            if (dataLayer && dataLayer.length > 0) {
+            if (!plmJson) return warehouseJson;
+
+            const plmItems = findArrayWithKey(plmJson, 'Short_Name') || findArrayWithKey(plmJson, 'Project_Name') || [];
+            const stateMap = new Map<string, string>();
+            plmItems.forEach((item: PlmEntityItem) => {
+                const key = item.Short_Name || item.Project_Name;
+                if (key && item.State_Name !== undefined) {
+                    stateMap.set(key, item.State_Name);
+                }
+            });
+
+            const warehouseItems = findArrayWithKey(warehouseJson, 'Project_Name') as BimProjectItem[];
+            if (warehouseItems && warehouseItems.length > 0) {
                 let modifiedCount = 0;
-                dataLayer.forEach(item => {
-                    if (item && item.Project_Name && projectStateService.projectStateMap.has(item.Project_Name)) {
-                        item.State_Name = projectStateService.projectStateMap.get(item.Project_Name)!;
-                        modifiedCount++;
-                    } else if (item && item.Project_Name && item.State_Name === undefined) {
-                        item.State_Name = null;
+                warehouseItems.forEach(item => {
+                    if (item && item.Project_Name) {
+                        if (stateMap.has(item.Project_Name)) {
+                            item.State_Name = stateMap.get(item.Project_Name)!;
+                            modifiedCount++;
+                        } else if (item.State_Name === undefined) {
+                            item.State_Name = null;
+                        }
                     }
                 });
-                console.log(`[HHJGBIM_Enhance] ‘项目库存统计’渲染拦截成功，动态注入 ${modifiedCount} 条数据`);
+                console.log(`[HHJGBIM_Enhance] 拦截成功，注入 ${modifiedCount} 条状态`);
             }
-            return responseData;
+            return warehouseJson;
         } catch (error) {
-            return responseData;
+            console.error('[HHJGBIM_Enhance] 数据解析注入异常:', error);
+            return warehouseJson;
         }
     }
 
@@ -44,21 +59,21 @@ export class ProjectInventoryEnhance {
             const url = (this as any)._bizRequestUrl || '';
 
             if (url.includes(WAREHOUSE_DATA_STATS_URL)) {
-                // 1. 获取原生的 getter 访问器，避免引发无限递归爆栈
                 const originalResponseTextGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText')?.get;
                 const originalResponseGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
                 
                 let isProcessed = false;
                 let cachedText: string | null = null;
                 let cachedResponse: any = null;
+                let plmDataCache: any = null;
 
                 const processResponseOnce = () => {
                     if (isProcessed) return;
                     isProcessed = true;
                     try {
                         const rawText = originalResponseTextGetter ? originalResponseTextGetter.call(this) : (this as any).response;
-                        const json = JSON.parse(rawText);
-                        const modifiedJson = self.injectTargetData(json);
+                        const originalJson = JSON.parse(rawText);
+                        const modifiedJson = self.injectTargetData(originalJson, plmDataCache);
                         cachedText = JSON.stringify(modifiedJson);
                         cachedResponse = this.responseType === 'json' ? modifiedJson : cachedText;
                     } catch (e) {
@@ -67,7 +82,6 @@ export class ProjectInventoryEnhance {
                     }
                 };
 
-                // 2. 直接在实例层覆写 Getter，无视宿主框架的事件绑定顺序
                 Object.defineProperty(this, 'responseText', {
                     get: () => {
                         if (this.readyState === 4) {
@@ -92,8 +106,8 @@ export class ProjectInventoryEnhance {
                     enumerable: true
                 });
 
-                // 3. 阻塞执行，确保前置状态字典已同步
-                projectStateService.ensureProjectStateSynced().then(() => { 
+                projectService.fetchProjectEntities().then((plmJson) => { 
+                    plmDataCache = plmJson;
                     originalXHRSend.apply(this, args as any); 
                 });
             } else {
@@ -110,23 +124,24 @@ export class ProjectInventoryEnhance {
             const requestUrl = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
 
             if (requestUrl.includes(WAREHOUSE_DATA_STATS_URL)) {
-                await projectStateService.ensureProjectStateSynced();
-                const response = await originalFetch.apply(this, args as any);
+                const [response, plmJson] = await Promise.all([
+                    originalFetch.apply(this, args as any),
+                    projectService.fetchProjectEntities()
+                ]);
                 
                 try {
                     const cloneRes = response.clone();
-                    const json = await cloneRes.json();
-                    const modifiedJson = self.injectTargetData(json);
+                    const warehouseJson = await cloneRes.json();
+                    
+                    const modifiedJson = self.injectTargetData(warehouseJson, plmJson);
                     const modifiedStr = JSON.stringify(modifiedJson);
                     
-                    // 使用 Proxy 代理对象接管原生 Response，确保元数据绝对完整
                     return new Proxy(response, {
                         get(target, prop, receiver) {
                             if (prop === 'json') return async () => modifiedJson;
                             if (prop === 'text') return async () => modifiedStr;
                             
                             const value = Reflect.get(target, prop, receiver);
-                            // 修正上下文环境，防止原生方法调用异常
                             return typeof value === 'function' ? value.bind(target) : value;
                         }
                     });
