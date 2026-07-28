@@ -1,17 +1,28 @@
 import { WAREHOUSE_DATA_STATS_URL } from '../config/constants';
-import { projectStateService } from '../services/ProjectStateService'; 
+import { ProjectService } from '../services/ProjectService'; 
 import { findArrayWithKey } from '../utils/helpers';
-import { BimProjectItem } from '../types';
+import { BimProjectItem, PlmEntityItem } from '../types';
 
 export class ProjectInventoryEnhance {
+    private localProjectStateMap = new Map<string, string>();
+
+    // 内部方法：从原始数据中提取自身业务所需的信息并构建 Map
+    private buildLocalMap(items: PlmEntityItem[]): void {
+        items.forEach(item => {
+            if (item?.Short_Name && item.State_Name !== undefined) {
+                this.localProjectStateMap.set(item.Short_Name, item.State_Name);
+            }
+        });
+    }
+
     private injectTargetData(responseData: any): any {
         try {
             const dataLayer = findArrayWithKey(responseData, 'Project_Name') as BimProjectItem[];
             if (dataLayer && dataLayer.length > 0) {
                 let modifiedCount = 0;
                 dataLayer.forEach(item => {
-                    if (item && item.Project_Name && projectStateService.projectStateMap.has(item.Project_Name)) {
-                        item.State_Name = projectStateService.projectStateMap.get(item.Project_Name)!;
+                    if (item && item.Project_Name && this.localProjectStateMap.has(item.Project_Name)) {
+                        item.State_Name = this.localProjectStateMap.get(item.Project_Name)!;
                         modifiedCount++;
                     } else if (item && item.Project_Name && item.State_Name === undefined) {
                         item.State_Name = null;
@@ -57,7 +68,11 @@ export class ProjectInventoryEnhance {
             });
 
             if (url.includes(WAREHOUSE_DATA_STATS_URL)) {
-                projectStateService.ensureProjectStateSynced().then(() => { originalXHRSend.apply(this, args as any); });
+                // 核心变动：请求前拉取信息并自行提取
+                ProjectService.fetchProjectEntities().then((items) => { 
+                    self.buildLocalMap(items);
+                    originalXHRSend.apply(this, args as any); 
+                });
             } else {
                 originalXHRSend.apply(this, args as any);
             }
@@ -71,7 +86,10 @@ export class ProjectInventoryEnhance {
             const requestUrl = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
 
             if (requestUrl.includes(WAREHOUSE_DATA_STATS_URL)) {
-                await projectStateService.ensureProjectStateSynced();
+                // 核心变动：请求前拉取信息并自行提取
+                const items = await ProjectService.fetchProjectEntities();
+                self.buildLocalMap(items);
+                
                 const response = await originalFetch.apply(this, args as any);
                 const cloneRes = response.clone();
                 try {

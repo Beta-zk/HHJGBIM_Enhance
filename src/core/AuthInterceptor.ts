@@ -1,5 +1,5 @@
 import { LOGIN_URL } from '../config/constants';
-import { projectStateService } from '../services/ProjectStateService';
+import { globalAuthManager } from '../store/GlobalAuthManager';
 
 export class AuthInterceptor {
     public init(): void {
@@ -11,8 +11,7 @@ export class AuthInterceptor {
     private hijackXHR(): void {
         const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
         XMLHttpRequest.prototype.setRequestHeader = function(header: string, value: string) {
-            // 嗅探并收集所有外发请求的关键 Header
-            projectStateService.updateHeaders(header, value);
+            globalAuthManager.updateHeader(header, value);
             return originalSetRequestHeader.apply(this, [header, value]);
         };
 
@@ -27,11 +26,10 @@ export class AuthInterceptor {
             const url = (this as any)._authRequestUrl || '';
 
             this.addEventListener('readystatechange', function() {
-                // 专职拦截登录接口响应，提取最高优先级的 Token
                 if (this.readyState === 4 && this.status >= 200 && this.status < 300) {
                     if (url.includes(LOGIN_URL)) {
                         const token = this.getResponseHeader('Authorization');
-                        if (token) projectStateService.setAuthToken(token);
+                        if (token) globalAuthManager.setAuthToken(token);
                     }
                 }
             });
@@ -46,20 +44,18 @@ export class AuthInterceptor {
             const requestUrl = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
             const options = args[1] || {};
 
-            // 嗅探 Fetch 请求头
             if (options.headers) {
                 const h = new Headers(options.headers);
                 h.forEach((value, key) => {
-                    projectStateService.updateHeaders(key, value);
+                    globalAuthManager.updateHeader(key, value);
                 });
             }
 
             const response = await originalFetch.apply(this, args as any);
             
-            // 专职拦截 Fetch 登录响应，提取 Token
             if (requestUrl.includes(LOGIN_URL) && response.ok) {
                 const token = response.headers.get('Authorization');
-                if (token) projectStateService.setAuthToken(token);
+                if (token) globalAuthManager.setAuthToken(token);
             }
             
             return response;
