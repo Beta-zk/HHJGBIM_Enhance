@@ -5,7 +5,6 @@ import { PlmEntityItem } from '../types';
 declare const GM_xmlhttpRequest: any;
 
 class ProjectStateService {
-
     public projectStateMap = new Map<string, string>();
     
     public dynamicHeaders: Record<string, string> = {
@@ -14,10 +13,33 @@ class ProjectStateService {
     };
     
     private syncPromiseInstance: Promise<boolean> | null = null;
+    private readonly AUTH_STORAGE_KEY = 'HHJG_BIM_AUTH_TOKEN';
+
+    constructor() {
+        const savedToken = localStorage.getItem(this.AUTH_STORAGE_KEY);
+        if (savedToken) {
+            this.dynamicHeaders['Authorization'] = savedToken;
+        }
+    }
+
+    public setAuthToken(token: string): void {
+        if (!token) return;
+        this.dynamicHeaders['Authorization'] = token;
+        localStorage.setItem(this.AUTH_STORAGE_KEY, token);
+        console.log('[HHJGBIM_Enhance] 已成功提取并持久化 Authorization 令牌');
+    }
 
     public updateHeaders(key: string, value: string): void {
         const lowerKey = key.toLowerCase();
-        if (lowerKey === 'authorization' || lowerKey === 'last_working_object_id' || lowerKey.includes('tenant') || lowerKey.includes('token')) {
+        
+        if (lowerKey === 'authorization') {
+            if (!this.dynamicHeaders['Authorization']) {
+                this.dynamicHeaders['Authorization'] = value;
+            }
+            return;
+        }
+
+        if (lowerKey === 'last_working_object_id' || lowerKey.includes('tenant') || lowerKey.includes('token')) {
             this.dynamicHeaders[key] = value;
         }
     }
