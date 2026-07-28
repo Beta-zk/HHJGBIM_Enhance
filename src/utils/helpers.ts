@@ -25,17 +25,31 @@ export function showToast(msg: string, isSuccess: boolean = true): void {
 
 export function findArrayWithKey(data: any, key: string): any[] | null {
     let result: any[] | null = null;
+    const seen = new Set(); // 阻断对象相互嵌套导致的调用栈溢出
+
     function search(obj: any) {
         if (result) return;
+        if (obj === null || typeof obj !== 'object') return;
+        if (seen.has(obj)) return;
+        seen.add(obj);
+
         if (Array.isArray(obj)) {
-            if (obj.length > 0 && typeof obj[0] === 'object' && obj[0] !== null && key in obj[0]) {
-                result = obj; return;
+            // 放宽寻址条件：只要数组中存在任意有效对象满足包含指定 Key，即认定命中目标
+            const hasTarget = obj.some(item => typeof item === 'object' && item !== null && key in item);
+            if (hasTarget) {
+                result = obj;
+                return;
             }
             for (let i = 0; i < obj.length; i++) search(obj[i]);
-        } else if (obj !== null && typeof obj === 'object') {
-            for (const k in obj) search(obj[k]);
+        } else {
+            for (const k in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, k)) {
+                    search(obj[k]);
+                }
+            }
         }
     }
+    
     search(data);
     return result;
 }
