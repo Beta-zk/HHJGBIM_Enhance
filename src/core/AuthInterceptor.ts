@@ -1,73 +1,47 @@
-import { LOGIN_URL } from '../config/constants';
 import { authService } from '../services/AuthService';
 
 export class AuthInterceptor {
     public init(): void {
         this.hijackXHR();
         this.hijackFetch();
-        console.log('[HHJGBIM_Enhance] 鉴权与请求头拦截器已挂载');
+        console.log('[HHJGBIM_Enhance] 鉴权拦截器已挂载（静默嗅探模式）');
     }
 
     private hijackXHR(): void {
         const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+        
         XMLHttpRequest.prototype.setRequestHeader = function(header: string, value: string) {
+            // 静默嗅探：只要前端任何原生请求尝试发送 Header，我们直接捕获并交由 authService 鉴定
             authService.updateHeaders(header, value);
             return originalSetRequestHeader.apply(this, [header, value]);
         };
 
-        const originalXHROpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method: string, url: string | URL) {
-            (this as any)._authRequestUrl = url.toString();
-            return originalXHROpen.apply(this, arguments as any);
-        };
-
-        const originalXHRSend = XMLHttpRequest.prototype.send;
-        XMLHttpRequest.prototype.send = function(...args: any[]) {
-            const url = (this as any)._authRequestUrl || '';
-
-            this.addEventListener('readystatechange', function() {
-                if (this.readyState === 4 && this.status >= 200 && this.status < 300) {
-                    if (url.includes(LOGIN_URL)) {
-                        const token = this.getResponseHeader('Authorization');
-                        if (token) authService.setAuthToken(token);
-                    }
-                }
-            });
-
-            originalXHRSend.apply(this, args as any);
-        };
+        // 说明：已彻底移除对 LOGIN_URL 响应头的拦截代码。
+        // 原网页登录成功后，接下来的任意业务请求必然会调用 setRequestHeader 注入 Token。
+        // 我们只需守株待兔，即可避免 Refused to get unsafe header 报错。
     }
 
     private hijackFetch(): void {
         const originalFetch = window.fetch;
+        
         window.fetch = async function(...args: any[]) {
-            let requestUrl = '';
             let headersObj: Headers | null = null;
 
+            // 提取 Fetch 请求头
             if (args[0] instanceof Request) {
-                requestUrl = args[0].url;
                 headersObj = args[0].headers;
-            } else {
-                requestUrl = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
-                if (args[1] && args[1].headers) {
-                    headersObj = new Headers(args[1].headers);
-                }
+            } else if (args[1] && args[1].headers) {
+                headersObj = new Headers(args[1].headers);
             }
 
+            // 静默嗅探 Fetch 的对外请求头
             if (headersObj) {
                 headersObj.forEach((value, key) => {
                     authService.updateHeaders(key, value);
                 });
             }
 
-            const response = await originalFetch.apply(this, args as any);
-            
-            if (requestUrl.includes(LOGIN_URL) && response.ok) {
-                const token = response.headers.get('Authorization');
-                if (token) authService.setAuthToken(token);
-            }
-            
-            return response;
+            return await originalFetch.apply(this, args as any);
         };
     }
 }
