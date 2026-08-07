@@ -1,170 +1,147 @@
 <template>
-  <div class="hhjgbim-ui-container">
-    <div class="panel-header">🏭 工厂月度产值统计</div>
-    
-    <div class="table-wrapper">
-      <!-- 状态拦截区 -->
-      <div v-if="loading" class="status-text">⏳ 正在等待鉴权并拉取数据...</div>
-      <div v-else-if="errorMsg" class="status-text error">{{ errorMsg }}</div>
-      <div v-else-if="!tableData.length" class="status-text">⚠️ 暂无有效产值数据</div>
-      
-      <!-- 实体数据表格 -->
-      <table v-else class="data-table">
-        <thead>
-          <tr>
-            <th>月份</th>
-            <th>车间标识</th>
-            <th>数量 (Amount)</th>
-            <th>产值 (Value)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, index) in tableData" :key="index">
-            <td class="col-month">{{ item.Name }}月</td>
-            <td>{{ item.Workshop_Id ?? '-' }}</td>
-            <td>{{ item.Amount ?? '-' }}</td>
-            <td class="col-value">{{ item.Value !== null ? item.Value.toFixed(3) : '暂无数据' }}</td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="hhjgbim-sidebar" :class="{ 'is-expanded': isExpanded }">
+    <!-- 方形触发按钮 -->
+    <div class="toggle-btn" @click="togglePanel">
+      <span class="icon">{{ isExpanded ? '>' : '<' }}</span>
+    </div>
+
+    <!-- 侧边栏菜单内容 -->
+    <div class="sidebar-content">
+      <div class="sidebar-header">🛠️ 增强面板</div>
+      <div class="btn-list">
+        <button class="action-btn" @click="openFactoryModal">
+          📊 打开工厂产量
+        </button>
+        <button class="action-btn placeholder" disabled>
+          🚧 预留功能模块
+        </button>
+        <button class="action-btn placeholder" disabled>
+          🚧 预留功能模块
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- 图表数据弹窗 (独立挂载) -->
+  <FactoryOutputModal v-if="showModal" @close="showModal = false" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { factoryService } from '../services/FactoryService';
+import { ref } from 'vue';
+import FactoryOutputModal from './components/FactoryOutputModal.vue';
 
-// 1. 根据传入的 JSON 结构定义严格的 TS 类型
-interface MonthlyData {
-  Workshop_Id: string | null;
-  Name: string;
-  Amount: number | null;
-  Value: number | null;
-}
+const isExpanded = ref(false);
+const showModal = ref(false);
 
-interface ApiResponse {
-  Data: MonthlyData[];
-  IsSucceed: boolean;
-  IsNeedData: boolean;
-  Message: string | null;
-  StatusCode: number;
-}
+const togglePanel = () => {
+  isExpanded.value = !isExpanded.value;
+};
 
-// 2. 响应式状态声明
-const loading = ref(true);
-const errorMsg = ref('');
-const tableData = ref<MonthlyData[]>([]);
-
-// 3. 挂载时请求逻辑
-onMounted(async () => {
-  try {
-    const res = await factoryService.fetchMonthlyOutput() as ApiResponse;
-    console.log('[HHJGBIM_Enhance_UI] 🏭 真实产值数据返回:', res);
-    
-    // 严格校验业务状态码
-    if (res && res.StatusCode === 200 && res.IsSucceed) {
-      tableData.value = res.Data || [];
-    } else {
-      errorMsg.value = res?.Message || '接口返回状态异常 (非200或IsSucceed为false)';
-    }
-  } catch (error) {
-    console.error('[HHJGBIM_Enhance_UI] 数据加载引发崩溃:', error);
-    errorMsg.value = '网络请求失败，请检查控制台日志';
-  } finally {
-    loading.value = false;
-  }
-});
+const openFactoryModal = () => {
+  showModal.value = true;
+  // 打开弹窗时，可选择性自动收起侧边栏，减少画面遮挡
+  isExpanded.value = false; 
+};
 </script>
 
 <style scoped>
-.hhjgbim-ui-container {
+/* 侧边栏容器：垂直居中，靠最右侧 */
+.hhjgbim-sidebar {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 380px;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%) translateX(100%); /* 默认收起至屏幕外 */
+  width: 220px;
   background: rgba(30, 41, 59, 0.95);
   color: #f8fafc;
-  padding: 16px;
-  border-radius: 8px;
-  z-index: 2147483647;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  box-shadow: -5px 0 25px rgba(0,0,0,0.3);
   backdrop-filter: blur(8px);
+  z-index: 2147483646;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid #334155;
+  border-right: none;
 }
 
-.panel-header {
+/* 展开状态 */
+.hhjgbim-sidebar.is-expanded {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* 侧边方形控制按钮 */
+.toggle-btn {
+  position: absolute;
+  left: -40px; /* 向左凸出 */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid #334155;
+  border-right: none;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: -5px 0 10px rgba(0,0,0,0.2);
+  transition: background 0.2s;
+}
+
+.toggle-btn:hover {
+  background: #334155;
+}
+
+.toggle-btn .icon {
+  font-family: monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #38bdf8;
+}
+
+/* 内容区排版 */
+.sidebar-content {
+  padding: 16px;
+}
+
+.sidebar-header {
   font-size: 14px;
   font-weight: 600;
   border-bottom: 1px solid #475569;
   padding-bottom: 10px;
-  margin-bottom: 12px;
-  color: #e2e8f0;
-}
-
-.table-wrapper {
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.status-text {
-  font-size: 13px;
-  color: #94a3b8;
+  margin-bottom: 16px;
   text-align: center;
-  padding: 24px 0;
 }
 
-.status-text.error {
-  color: #f87171;
+.btn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* 表格视觉规范 */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.data-table th, .data-table td {
+.action-btn {
+  background: #334155;
+  color: #e2e8f0;
   border: 1px solid #475569;
-  padding: 8px 10px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
   text-align: left;
 }
 
-.data-table th {
-  background-color: #334155;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  color: #94a3b8;
-  font-weight: 500;
+.action-btn:hover:not(:disabled) {
+  background: #475569;
+  border-color: #38bdf8;
+  color: #fff;
 }
 
-.data-table tbody tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-.data-table tbody tr:hover {
-  background-color: rgba(56, 189, 248, 0.1);
-}
-
-.col-month {
-  font-weight: 600;
-  color: #38bdf8;
-}
-
-.col-value {
-  font-family: monospace;
-  color: #a7f3d0;
-}
-
-/* 滚动条美化 */
-.table-wrapper::-webkit-scrollbar {
-  width: 6px;
-}
-.table-wrapper::-webkit-scrollbar-thumb {
-  background: #64748b;
-  border-radius: 3px;
+.action-btn.placeholder {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: dashed;
 }
 </style>

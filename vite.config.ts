@@ -10,7 +10,7 @@ export default defineConfig({
       userscript: {
         name: "HHJGBIM_Enhance",
         namespace: "http://tampermonkey.net/",
-        version: "0.2.0",
+        version: "0.3.0",
         description: "华泓精工比姆泰克增强脚本 by 江西华泓精工",
         match: ["*://*.bimtk.com/*"],
         grant: ["GM_xmlhttpRequest"],
@@ -23,6 +23,7 @@ export default defineConfig({
       build: {
         externalGlobals: {
           vue: cdn.jsdelivr("Vue", "dist/vue.global.prod.js"),
+          echarts: cdn.jsdelivr("echarts", "dist/echarts.min.js"),
         },
       },
     }),
