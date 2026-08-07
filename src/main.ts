@@ -1,17 +1,21 @@
+/**
+ * HHJGBIM_Enhance 主程序入口
+ * 依序挂载底层网络拦截器与各业务流重载模块。
+ */
 import { AuthInterceptor } from './core/AuthInterceptor';
 import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
+import { factoryService } from './services/FactoryService';
 
 (function() {
     'use strict';
-    console.log('[HHJGBIM_Enhance] 初始化脚本');
     
-    // 1. 优先初始化全局鉴权与请求头拦截器
+    // 1. 初始化全局鉴权与请求头静默嗅探拦截器
     new AuthInterceptor().init();
     
     // 2. 初始化各业务增强模块
     new ProjectInventoryEnhance().init();
     
-    // 若后续有其他模块（如 DocumentEnhance 等），在此处继续 new 并 init()
+    console.log(factoryService.fetchMonthlyOutput())
     
-    console.log('[HHJGBIM_Enhance] 所有模块加载完毕');
+    console.log('[HHJGBIM_Enhance] 核心模块加载完毕。鉴权拦截器已就绪。');
 })();
