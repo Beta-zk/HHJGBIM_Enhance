@@ -1,8 +1,10 @@
 import { defineConfig } from "vite";
-import monkey from "vite-plugin-monkey";
+import monkey, { cdn } from "vite-plugin-monkey";
+import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   plugins: [
+    vue(),
     monkey({
       entry: "src/main.ts",
       userscript: {
@@ -19,7 +21,9 @@ export default defineConfig({
         "run-at": "document-start",
       },
       build: {
-        externalGlobals: {},
+        externalGlobals: {
+          vue: cdn.jsdelivr("Vue", "dist/vue.global.prod.js"),
+        },
       },
     }),
   ],
