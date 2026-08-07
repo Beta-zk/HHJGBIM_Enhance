@@ -8,3 +8,5 @@ export const DEFAULT_REQUEST_PAYLOAD: RequestPayload = {
   Page: 1,
   PageSize: -1
 };
+
+export const MONTHLY_FACTORY_OUTPUT = 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionCount/MonthlyFactoyOutput'
