@@ -10,6 +10,11 @@ class AuthService {
     
     private readonly AUTH_STORAGE_KEY = 'HHJG_BIM_AUTH_TOKEN';
     private tokenResolvers: Array<(token: string) => void> = [];
+    
+    /**
+     * @description 核心状态锁：标记当前会话是否已成功拦截到最新 Token
+     */
+    private isSessionTokenReady: boolean = false; 
 
     constructor() {
         const savedToken = localStorage.getItem(this.AUTH_STORAGE_KEY);
@@ -20,19 +25,20 @@ class AuthService {
 
     /**
      * 更新请求头信息
-     * 当嗅探到有效的 Authorization 请求头时，不仅进行持久化，同时会唤醒所有处于等待状态的 UI 异步任务。
-     * @param key 请求头键名
-     * @param value 请求头键值
+     * 当嗅探到有效的 Authorization 请求头时，进行持久化并无条件唤醒等待队列。
+     * @param {string} key - 请求头键名
+     * @param {string} value - 请求头键值
      */
     public updateHeaders(key: string, value: string): void {
         const lowerKey = key.toLowerCase();
         
         if (lowerKey === 'authorization') {
-            if (this.dynamicHeaders['Authorization'] !== value) {
-                this.dynamicHeaders['Authorization'] = value;
-                localStorage.setItem(this.AUTH_STORAGE_KEY, value);
-                this.notifyTokenReady(value);
-            }
+            this.dynamicHeaders['Authorization'] = value;
+            this.isSessionTokenReady = true; // 标记已获取当前会话最新有效凭证
+            localStorage.setItem(this.AUTH_STORAGE_KEY, value);
+            
+            // 无论 Token 是否发生变化，只要成功拦截到了有效请求，就立即唤醒所有挂起的业务逻辑
+            this.notifyTokenReady(value);
             return;
         }
 
@@ -48,11 +54,12 @@ class AuthService {
 
     /**
      * 挂起并等待有效 Token 注入
-     * 若当前已存在 Token 则立即返回；若不存在，则返回一个挂起的 Promise，直到 AuthInterceptor 捕获到 Token 时被唤醒。
-     * @returns 解析为有效 Authorization 字符串的 Promise
+     * 严格等待当前页面生命周期内拦截到的最新 Token，避免由于使用本地过期缓存导致 401 鉴权失败。
+     * @returns {Promise<string>} 解析为有效 Authorization 字符串的 Promise
      */
     public async waitForToken(): Promise<string> {
-        if (this.dynamicHeaders['Authorization']) {
+        // 必须满足“当前会话已拦截”且“存在 Token”双重条件，才予以放行
+        if (this.isSessionTokenReady && this.dynamicHeaders['Authorization']) {
             return Promise.resolve(this.dynamicHeaders['Authorization']);
         }
 
@@ -64,7 +71,7 @@ class AuthService {
     /**
      * 内部通知方法
      * 唤醒等待队列中的所有 Promise 任务
-     * @param token 捕获到的最新 Token
+     * @param {string} token - 捕获到的最新 Token
      */
     private notifyTokenReady(token: string): void {
         while (this.tokenResolvers.length > 0) {
@@ -75,7 +82,7 @@ class AuthService {
 
     /**
      * 获取当前完整的动态请求头映射表
-     * @returns 映射表对象
+     * @returns {Record<string, string>} 映射表对象
      */
     public getHeaders(): Record<string, string> {
         return this.dynamicHeaders;
@@ -83,9 +90,11 @@ class AuthService {
 
     /**
      * 清除本地鉴权状态
+     * 触发 401 时重置状态锁，以便后续请求重新进入挂起等待
      */
     public clearAuth(): void {
         delete this.dynamicHeaders['Authorization'];
+        this.isSessionTokenReady = false;
         localStorage.removeItem(this.AUTH_STORAGE_KEY);
     }
 }

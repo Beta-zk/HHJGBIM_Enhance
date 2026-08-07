@@ -15,7 +15,9 @@ import { factoryService } from './services/FactoryService';
     // 2. 初始化各业务增强模块
     new ProjectInventoryEnhance().init();
     
-    console.log(factoryService.fetchMonthlyOutput())
+    factoryService.fetchMonthlyOutput().then(res => {
+        console.log('[HHJGBIM_Enhance] 🏭 FactoryService 测试数据返回:', res);
+    });
     
     console.log('[HHJGBIM_Enhance] 核心模块加载完毕。鉴权拦截器已就绪。');
 })();
