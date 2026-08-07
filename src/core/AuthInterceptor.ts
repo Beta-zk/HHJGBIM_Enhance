@@ -5,7 +5,7 @@ export class AuthInterceptor {
     public init(): void {
         this.hijackXHR();
         this.hijackFetch();
-        console.log('[HHJGBIM_Enhance] 鉴权拦截器已挂载 (精准嗅探模式)');
+        console.log('[HHJGBIM_Enhance] 鉴权拦截器已挂载');
     }
 
     private hijackXHR(): void {
