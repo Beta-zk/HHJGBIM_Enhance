@@ -1,27 +1,59 @@
 /**
  * @function showToast
- * @description 渲染全局状态提示吐司通知。
+ * @description 渲染全局状态提示吐司通知（现代高颜值版）。
  * @param {string} msg 提示内容文本
- * @param {boolean} [isSuccess=true] 布尔值标识是否为成功状态（决定底色）
+ * @param {boolean} [isSuccess=true] 布尔值标识是否为成功状态
  * @returns {void}
  */
 export function showToast(msg: string, isSuccess: boolean = true): void {
     const toast = document.createElement('div');
+    
+    // SVG 图标定义
+    const successIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+    const errorIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+
+    const bgColor = isSuccess ? 'rgba(16, 185, 129, 0.92)' : 'rgba(239, 68, 68, 0.92)';
+    const shadowColor = isSuccess ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
+
     toast.style.cssText = `
-        position: fixed; bottom: 20px; right: 20px;
-        background: ${isSuccess ? 'rgba(46, 204, 113, 0.9)' : 'rgba(231, 76, 60, 0.95)'};
-        color: #fff; z-index: 2147483647; padding: 12px 24px; border-radius: 8px;
-        font-size: 14px; font-weight: bold; font-family: sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: opacity 0.3s ease; pointer-events: none;
+        position: fixed; bottom: 28px; right: 28px;
+        display: flex; align-items: center; gap: 10px;
+        background: ${bgColor}; color: #ffffff;
+        padding: 12px 20px; border-radius: 12px;
+        font-size: 14px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        box-shadow: 0 10px 25px -5px ${shadowColor}, 0 8px 10px -6px rgba(0,0,0,0.1);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        z-index: 2147483647; pointer-events: none;
+        opacity: 0; transform: translateY(16px) scale(0.95);
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     `;
-    toast.innerHTML = msg;
+
+    // 结构构建与文本转义（防 XSS）
+    const iconSpan = document.createElement('span');
+    iconSpan.style.display = 'flex';
+    iconSpan.innerHTML = isSuccess ? successIcon : errorIcon;
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = msg;
+
+    toast.appendChild(iconSpan);
+    toast.appendChild(textSpan);
 
     const attemptAppend = () => {
         if (document.body) {
             document.body.appendChild(toast);
+            
+            // 触发进场动画
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0) scale(1)';
+            });
+
+            // 定时退场
             setTimeout(() => {
                 toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
+                toast.style.transform = 'translateY(10px) scale(0.98)';
+                setTimeout(() => toast.remove(), 350);
             }, 3000);
         } else {
             setTimeout(attemptAppend, 50);
