@@ -5,15 +5,14 @@
 import { API_URLS } from '../config/constants';
 import { HttpService } from '../core/HttpService';
 import { authService } from './AuthService';
-import { RequestPayload } from '../types';
 
 class ProjectService {
     private cachedPlmJson: any = null;
     private fetchPromise: Promise<any> | null = null;
 
-    private readonly defaultPayload: RequestPayload = {
+    private readonly defaultPayload = {
         Page: 1,
-        PageSize: -1
+        PageSize: 100
     };
 
     public async fetchProjectEntities(): Promise<any> {
@@ -22,7 +21,6 @@ class ProjectService {
 
         await authService.waitForToken();
 
-        // 更新点：使用 API_URLS.PLM_PROJECT_ENTITIES
         this.fetchPromise = HttpService.post(API_URLS.PLM_PROJECT_ENTITIES, this.defaultPayload)
             .then(json => {
                 if (json) {

@@ -9,8 +9,3 @@ export interface PlmEntityItem {
     State_Name?: string;
     [key: string]: any;
 }
-
-export interface RequestPayload {
-    Page: number;
-    PageSize: number;
-}

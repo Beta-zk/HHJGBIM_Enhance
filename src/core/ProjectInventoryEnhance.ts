@@ -2,8 +2,19 @@ import { API_URLS } from '../config/constants';
 import { projectService } from '../services/ProjectService'; 
 import { BimProjectItem, PlmEntityItem } from '../types';
 
+/**
+ * @class ProjectInventoryEnhance
+ * @description 项目库存数据增强模块，负责静态寻址注入核心状态属性。
+ */
 export class ProjectInventoryEnhance {
     
+    /**
+     * @method injectTargetData
+     * @description 执行数据注入解析，并统计修改条目数。
+     * @param {any} warehouseJson 仓储原始数据
+     * @param {any} plmJson PLM原始数据
+     * @returns {any} 突变处理后的新数据对象
+     */
     private injectTargetData(warehouseJson: any, plmJson: any): any {
         try {
             if (!plmJson || !warehouseJson) return warehouseJson;
@@ -41,11 +52,21 @@ export class ProjectInventoryEnhance {
         }
     }
 
+    /**
+     * @method init
+     * @description 挂载针对XHR与Fetch底层协议的拦截代理。
+     * @returns {void}
+     */
     public init(): void {
         this.hijackXHR();
         this.hijackFetch();
     }
 
+    /**
+     * @method hijackXHR
+     * @description 代理重写 XMLHttpRequest 以介入数据通讯过程。
+     * @returns {void}
+     */
     private hijackXHR(): void {
         const originalXHROpen = XMLHttpRequest.prototype.open;
         const originalXHRSend = XMLHttpRequest.prototype.send;
@@ -59,7 +80,7 @@ export class ProjectInventoryEnhance {
         XMLHttpRequest.prototype.send = function(...args: any[]) {
             const url = (this as any)._bizRequestUrl || '';
 
-            // 更新点：使用 API_URLS.WAREHOUSE_DATA_STATS
+            /** @description 约束判定：锁定对应的数据统计接口进行数据拦截过滤 */
             if (url.includes(API_URLS.WAREHOUSE_DATA_STATS)) {
                 const originalResponseTextGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText')?.get;
                 const originalResponseGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
@@ -112,6 +133,11 @@ export class ProjectInventoryEnhance {
         };
     }
 
+    /**
+     * @method hijackFetch
+     * @description 代理重写 Fetch 以介入数据通讯过程。
+     * @returns {void}
+     */
     private hijackFetch(): void {
         const originalFetch = window.fetch;
         const self = this;
@@ -119,7 +145,7 @@ export class ProjectInventoryEnhance {
         window.fetch = async function(...args: any[]) {
             const requestUrl = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
 
-            // 更新点：使用 API_URLS.WAREHOUSE_DATA_STATS
+            /** @description 约束判定：锁定对应的数据统计接口进行数据拦截过滤 */
             if (requestUrl.includes(API_URLS.WAREHOUSE_DATA_STATS)) {
                 const [response, plmJson] = await Promise.all([
                     originalFetch.apply(this, args as any),

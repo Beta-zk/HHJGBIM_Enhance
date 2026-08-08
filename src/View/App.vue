@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { factoryService } from '../services/FactoryService';
+import { factoryService } from '../services/FactoryService.ts';
 import PerformanceReport from './components/PerformanceReport.vue';
 
 const isExpanded = ref(false);
