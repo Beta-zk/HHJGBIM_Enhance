@@ -4,13 +4,13 @@ import { BimProjectItem, PlmEntityItem } from '../types';
 
 /**
  * @class ProjectInventoryEnhance
- * @description 项目库存数据增强模块，负责静态寻址注入核心状态属性。
+ * @description 项目库存数据增强模块，负责静态寻址注入核心状态属性，并提供符合静态类型约束的脏数据兜底清洗。
  */
 export class ProjectInventoryEnhance {
     
     /**
      * @method injectTargetData
-     * @description 执行数据注入解析，并统计修改条目数。
+     * @description 执行数据注入解析，统计修改条目，并安全规避 TS2367 异常以实现兜底清洗。
      * @param {any} warehouseJson 仓储原始数据
      * @param {any} plmJson PLM原始数据
      * @returns {any} 突变处理后的新数据对象
@@ -38,8 +38,14 @@ export class ProjectInventoryEnhance {
                     if (stateMap.has(item.Project_Name)) {
                         item.State_Name = stateMap.get(item.Project_Name)!;
                         modifiedCount++;
-                    } else if (item.State_Name === undefined) {
-                        item.State_Name = null;
+                    } else {
+                        /** 
+                         * @description 脏数据清洗：运用 String() 显式转换消除 TypeScript 静态检查报错（TS2367），
+                         * 同步兼容后端可能返回的 string 型 '0' 与 number 型 0。
+                         */
+                        if (!item.State_Name || String(item.State_Name) === '0') {
+                            item.State_Name = '未知';
+                        }
                     }
                 }
             });
