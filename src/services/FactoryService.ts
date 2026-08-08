@@ -12,7 +12,6 @@ class FactoryService {
         const targetYear = year || new Date().getFullYear().toString();
         const payload = { year: targetYear };
         
-        // 更新点：使用 API_URLS.MONTHLY_FACTORY_OUTPUT
         return await HttpService.post(API_URLS.MONTHLY_FACTORY_OUTPUT, payload);
     }
 }
