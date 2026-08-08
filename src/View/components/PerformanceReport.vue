@@ -2,13 +2,12 @@
   <div class="fullscreen-report-overlay">
     <div class="report-page-container">
       <div class="page-header">
-        <!-- 修正视窗全局标题 -->
         <span class="title">绩效考核统计视窗</span>
         <button class="close-btn" @click="$emit('close')">✖ 关闭视图</button>
       </div>
 
       <div class="dashboard-layout">
-        <!-- 左侧：纯原生 DOM 驱动的表格排版区域 -->
+        <!-- 左侧：原生 DOM 表格区 (红框范围)，支持局部垂直滚动 -->
         <div class="table-section">
           <div class="table-wrapper">
             
@@ -41,7 +40,7 @@
               </table>
             </div>
 
-            <!-- 报表二：深化重量 (接口占位) -->
+            <!-- 报表二：深化重量 -->
             <div class="native-table-container">
               <h3 class="table-title">深化重量</h3>
               <table class="native-table">
@@ -52,7 +51,6 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <!-- 由于暂无接口，填入 0 作为占位符 -->
                     <td v-for="index in 12" :key="'weight-v-'+index">0</td>
                   </tr>
                 </tbody>
@@ -62,10 +60,15 @@
           </div>
         </div>
         
-        <!-- 右侧：无损保留原版暗黑主题双图表组件 -->
+        <!-- 右侧：动态图表组件区 (黄框范围) -->
         <div class="chart-section">
-          <div ref="monthChartRef" class="chart-box"></div>
-          <div ref="quarterChartRef" class="chart-box"></div>
+          <!-- 预留动态组件插槽，未来可通过修改 activeChartComponent 无缝切换其它图表组件 -->
+          <component 
+            :is="activeChartComponent" 
+            :month-names="monthNames"
+            :month-values="monthValues"
+            :quarter-values="formattedQuarterValues"
+          />
         </div>
       </div>
     </div>
@@ -73,21 +76,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import * as echarts from 'echarts';
+import { ref, shallowRef, onMounted, nextTick } from 'vue';
+// 引入解耦后的图表组件
+import FactoryOutputChart from './PerformanceReport/FactoryOutputChart.vue';
 
 const props = defineProps<{
   rawData: any[]
 }>();
 
-// 右侧图表容器引用
-const monthChartRef = ref<HTMLDivElement | null>(null);
-const quarterChartRef = ref<HTMLDivElement | null>(null);
+// 使用 shallowRef 挂载组件，优化 Vue 底层代理性能，预留切换接口
+const activeChartComponent = shallowRef(FactoryOutputChart);
 
-let monthChartInstance: echarts.ECharts | null = null;
-let quarterChartInstance: echarts.ECharts | null = null;
-
-// 表格所需的响应式数据源
 const monthNames = ref<string[]>([]);
 const monthValues = ref<number[]>([]);
 const formattedQuarterValues = ref<number[]>([]);
@@ -100,22 +99,10 @@ const monthMap: Record<string, string> = {
 
 onMounted(async () => {
   await nextTick();
-  processAndRenderData();
-  window.addEventListener('resize', handleResize);
+  processData();
 });
 
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-  monthChartInstance?.dispose();
-  quarterChartInstance?.dispose();
-});
-
-const handleResize = () => {
-  monthChartInstance?.resize();
-  quarterChartInstance?.resize();
-};
-
-const processAndRenderData = () => {
+const processData = () => {
   const tempMonthNames: string[] = [];
   const tempMonthValues: number[] = [];
   const quarterValues = [0, 0, 0, 0];
@@ -133,66 +120,25 @@ const processAndRenderData = () => {
     else if (monthInt >= 10 && monthInt <= 12) quarterValues[3] += val;
   });
 
-  // 挂载响应式状态以供原生 HTML 表格循环渲染
   monthNames.value = tempMonthNames;
   monthValues.value = tempMonthValues;
   formattedQuarterValues.value = quarterValues.map(v => Number(v.toFixed(3)));
-
-  // 初始化图表实例
-  monthChartInstance = initChart(monthChartRef.value, '月度产量', tempMonthNames, tempMonthValues, '#38bdf8');
-  quarterChartInstance = initChart(quarterChartRef.value, '季度产量', ['一季度', '二季度', '三季度', '四季度'], formattedQuarterValues.value, '#10b981');
-};
-
-const initChart = (dom: HTMLElement | null, title: string, xAxisData: string[], seriesData: number[], color: string) => {
-  if (!dom) return null;
-  const myChart = echarts.init(dom);
-  const option = {
-    title: { 
-      text: title, 
-      left: 'center',
-      textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' }
-    },
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: '3%', right: '3%', bottom: '5%', top: '20%', containLabel: true },
-    xAxis: { 
-      type: 'category', 
-      data: xAxisData,
-      axisLabel: { color: '#94a3b8', interval: 0 },
-      axisTick: { alignWithLabel: true }
-    },
-    yAxis: { 
-      type: 'value',
-      splitLine: { lineStyle: { color: '#334155', type: 'dashed' } },
-      axisLabel: { color: '#94a3b8' }
-    },
-    series: [
-      {
-        data: seriesData,
-        type: 'bar',
-        barWidth: '25%',
-        itemStyle: { borderRadius: [4, 4, 0, 0], color: color },
-        label: { show: true, position: 'top', color: '#f8fafc', fontSize: 12 }
-      }
-    ]
-  };
-  myChart.setOption(option);
-  return myChart;
 };
 </script>
 
 <style scoped>
-/* 最顶层的绝对遮罩 */
+/* 最顶层遮罩，锁定全局滚动 */
 .fullscreen-report-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   width: 100vw; height: 100vh;
   z-index: 2147483647;
   background-color: #1e293b;
-  overflow-y: auto;
+  overflow: hidden; /* 禁止全局视窗发生滚动 */
 }
 
 .report-page-container {
-  min-height: 100vh;
+  height: 100vh;
   padding: 30px 40px;
   box-sizing: border-box;
   display: flex;
@@ -200,88 +146,79 @@ const initChart = (dom: HTMLElement | null, title: string, xAxisData: string[], 
 }
 
 .page-header {
-  margin-bottom: 40px;
+  margin-bottom: 30px;
   padding-bottom: 15px;
   border-bottom: 1px solid #334155;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0; /* 保证标题栏不被压缩 */
 }
 
-.page-header .title {
-  color: #f8fafc;
-  font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 1px;
-}
+.page-header .title { color: #f8fafc; font-weight: 600; font-size: 20px; letter-spacing: 1px; }
 
 .close-btn {
-  background: transparent;
-  border: 1px solid #475569;
-  border-radius: 4px;
-  color: #94a3b8;
-  padding: 6px 12px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: transparent; border: 1px solid #475569; border-radius: 4px;
+  color: #94a3b8; padding: 6px 12px; font-size: 14px; cursor: pointer; transition: all 0.2s;
 }
+.close-btn:hover { background: #334155; color: #f8fafc; border-color: #f8fafc; }
 
-.close-btn:hover {
-  background: #334155;
-  color: #f8fafc;
-  border-color: #f8fafc;
-}
-
+/* Dashboard 核心布局，关键点：min-height: 0 激活子元素的局部滚动 */
 .dashboard-layout {
   display: flex;
   flex: 1;
   gap: 50px;
   align-items: stretch;
+  min-height: 0; 
 }
 
 /* -------------------------------------
-   左侧：原生表格布局约束体系
+   左侧 (红框区)：原生表格布局约束体系 
 -------------------------------------- */
 .table-section {
   flex: 1.2;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* 核心：内容超载时生成局部滚动条 */
+  padding-right: 15px; /* 为滚动条预留空间，防止挤压表格内容 */
 }
+
+/* 定制化美化暗黑风格滚动条 (Webkit) */
+.table-section::-webkit-scrollbar { width: 6px; }
+.table-section::-webkit-scrollbar-track { background: transparent; }
+.table-section::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+.table-section::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
 .table-wrapper {
-  background: #ffffff; /* 确保黑色边框清晰可见的底层容器 */
-  padding: 30px;
-  border-radius: 4px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  overflow-x: auto;
+  /* 移除丑陋的白色大底色，使其直接融入暗黑容器 */
   display: flex;
   flex-direction: column;
-  gap: 40px; /* 两个独立报表之间的呼吸间距 */
+  gap: 50px; 
+  padding-bottom: 30px; /* 触底预留呼吸空间 */
 }
 
-.native-table-container {
-  width: 100%;
-}
+.native-table-container { width: 100%; }
 
 .table-title {
   text-align: center;
-  color: #000000;
+  color: #f8fafc; /* 修正：适配暗黑背景的亮色标题 */
   font-size: 18px;
   font-weight: bold;
   margin: 0 0 15px 0;
   letter-spacing: 1px;
 }
 
-/* 核心原生表格样式：全量黑边框，绝对居中 */
+/* 核心原生表格样式：白底全量黑边框，绝对居中 */
 .native-table {
   width: 100%;
-  border-collapse: collapse; /* 经典单元格边框合并 */
-  table-layout: fixed; /* 强制等比均分 12 列表宽 */
+  border-collapse: collapse;
+  table-layout: fixed;
+  background-color: #ffffff; /* 表格主体保持白色 */
 }
 
 .native-table th,
 .native-table td {
-  border: 2px solid #000000; /* 全量黑边框加持 */
+  border: 2px solid #000000;
   text-align: center;
   vertical-align: middle;
   padding: 14px 8px;
@@ -289,29 +226,16 @@ const initChart = (dom: HTMLElement | null, title: string, xAxisData: string[], 
   font-size: 14px;
 }
 
-.native-table th {
-  background-color: #f1f5f9; /* 表头浅灰以提升层级感 */
-  font-weight: bold;
-}
-
-.native-table td {
-  background-color: #ffffff;
-}
+.native-table th { background-color: #f1f5f9; font-weight: bold; }
+.native-table td { background-color: #ffffff; }
 
 /* -------------------------------------
-   右侧：图表布局约束体系
+   右侧 (黄框区)：图表布局约束体系
 -------------------------------------- */
 .chart-section {
   flex: 1;
+  /* 右侧无需滚动，始终固定占满高度 */
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
-  gap: 40px;
-}
-
-.chart-box {
-  width: 100%;
-  flex: 1;
-  min-height: 280px;
 }
 </style>
