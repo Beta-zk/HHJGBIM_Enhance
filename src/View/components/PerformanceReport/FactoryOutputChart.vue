@@ -90,6 +90,7 @@ onUnmounted(() => {
   height: 100%;
   gap: 40px;
 }
+
 .chart-box {
   width: 100%;
   flex: 1;
