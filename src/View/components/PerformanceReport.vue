@@ -190,7 +190,6 @@ const processData = () => {
 .table-section::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
 .table-wrapper {
-  /* 移除丑陋的白色大底色，使其直接融入暗黑容器 */
   display: flex;
   flex-direction: column;
   gap: 50px; 
@@ -201,33 +200,46 @@ const processData = () => {
 
 .table-title {
   text-align: center;
-  color: #f8fafc; /* 修正：适配暗黑背景的亮色标题 */
+  color: #f8fafc; /* 适配暗黑背景的亮色标题 */
   font-size: 18px;
   font-weight: bold;
   margin: 0 0 15px 0;
   letter-spacing: 1px;
 }
 
-/* 核心原生表格样式：白底全量黑边框，绝对居中 */
+/* 核心原生表格样式：暗黑风格重构 */
 .native-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  background-color: #ffffff; /* 表格主体保持白色 */
+  background-color: transparent; /* 移除白底，继承大背景色 */
 }
 
 .native-table th,
 .native-table td {
-  border: 2px solid #000000;
+  border: 1px solid #475569; /* 使用柔和的灰色边框替代纯黑 */
   text-align: center;
   vertical-align: middle;
   padding: 14px 8px;
-  color: #000000;
   font-size: 14px;
 }
 
-.native-table th { background-color: #f1f5f9; font-weight: bold; }
-.native-table td { background-color: #ffffff; }
+.native-table th { 
+  background-color: #1a202c; /* 加深表头背景区分层级 */
+  color: #f8fafc; 
+  font-weight: bold; 
+}
+
+.native-table td { 
+  background-color: transparent; 
+  color: #e2e8f0; /* 数据内容使用亮灰色提升辨识度 */
+}
+
+/* 表格内部特殊行（如季度统计） */
+.native-table tbody th {
+  background-color: #2d3748;
+  color: #f1f5f9;
+}
 
 /* -------------------------------------
    右侧 (黄框区)：图表布局约束体系
