@@ -1,6 +1,6 @@
 /**
  * 鉴权管理服务类
- * 负责动态请求头的存储、更新，并提供针对异步 UI 模块的 Token 就绪等待订阅机制。
+ * 实现基于双路监听的状态同步机制，彻底隔离业务配置与底层网络嗅探。
  */
 class AuthService {
     public dynamicHeaders: Record<string, string> = {
@@ -10,69 +10,61 @@ class AuthService {
     
     private readonly AUTH_STORAGE_KEY = 'HHJG_BIM_AUTH_TOKEN';
     private tokenResolvers: Array<(token: string) => void> = [];
-    
-    /**
-     * @description 核心状态锁：标记当前会话是否已成功拦截到最新 Token
-     */
     private isSessionTokenReady: boolean = false; 
+
+    /**
+     * @description 全局会话凭证白名单，滤除无关请求头
+     */
+    private readonly SESSION_HEADERS = new Set([
+        'authorization',
+        'last_working_object_id',
+        'priority'
+    ]);
 
     constructor() {
         const savedToken = localStorage.getItem(this.AUTH_STORAGE_KEY);
         if (savedToken) {
-            this.dynamicHeaders['Authorization'] = savedToken;
+            this.dynamicHeaders['authorization'] = savedToken;
         }
     }
 
     /**
-     * 更新请求头信息
-     * 当嗅探到有效的 Authorization 请求头时，进行持久化并无条件唤醒等待队列。
+     * 更新请求头信息，执行仲裁逻辑
      * @param {string} key - 请求头键名
      * @param {string} value - 请求头键值
+     * @param {boolean} isPrimary - 标识是否源自高优先级的 LOGIN 接口
      */
-    public updateHeaders(key: string, value: string): void {
+    public updateHeaders(key: string, value: string, isPrimary: boolean = false): void {
         const lowerKey = key.toLowerCase();
         
+        // 拒收非白名单数据
+        if (!this.SESSION_HEADERS.has(lowerKey)) return;
+
+        // 【仲裁逻辑】: 若存在凭证，非 Primary(如 GetUserEntity) 不得覆盖 Primary 产生的数据；
+        // 只有在缺失状态下，非 Primary 来源才具备补充资格。
         if (lowerKey === 'authorization') {
-            this.dynamicHeaders['Authorization'] = value;
-            this.isSessionTokenReady = true; // 标记已获取当前会话最新有效凭证
-            localStorage.setItem(this.AUTH_STORAGE_KEY, value);
-            
-            // 无论 Token 是否发生变化，只要成功拦截到了有效请求，就立即唤醒所有挂起的业务逻辑
-            this.notifyTokenReady(value);
+            if (!this.isSessionTokenReady || isPrimary) {
+                this.dynamicHeaders['authorization'] = value;
+                this.isSessionTokenReady = true;
+                localStorage.setItem(this.AUTH_STORAGE_KEY, value);
+                this.notifyTokenReady(value);
+            }
             return;
         }
 
-        if (
-            lowerKey === 'last_working_object_id' || 
-            lowerKey.includes('tenant') || 
-            lowerKey.includes('token') || 
-            lowerKey.startsWith('x-')
-        ) {
-            this.dynamicHeaders[key] = value;
-        }
+        // 常规状态量覆盖
+        this.dynamicHeaders[lowerKey] = value;
     }
 
-    /**
-     * 挂起并等待有效 Token 注入
-     * 严格等待当前页面生命周期内拦截到的最新 Token，避免由于使用本地过期缓存导致 401 鉴权失败。
-     * @returns {Promise<string>} 解析为有效 Authorization 字符串的 Promise
-     */
     public async waitForToken(): Promise<string> {
-        // 必须满足“当前会话已拦截”且“存在 Token”双重条件，才予以放行
-        if (this.isSessionTokenReady && this.dynamicHeaders['Authorization']) {
-            return Promise.resolve(this.dynamicHeaders['Authorization']);
+        if (this.isSessionTokenReady && this.dynamicHeaders['authorization']) {
+            return Promise.resolve(this.dynamicHeaders['authorization']);
         }
-
         return new Promise((resolve) => {
             this.tokenResolvers.push(resolve);
         });
     }
 
-    /**
-     * 内部通知方法
-     * 唤醒等待队列中的所有 Promise 任务
-     * @param {string} token - 捕获到的最新 Token
-     */
     private notifyTokenReady(token: string): void {
         while (this.tokenResolvers.length > 0) {
             const resolve = this.tokenResolvers.shift();
@@ -80,20 +72,12 @@ class AuthService {
         }
     }
 
-    /**
-     * 获取当前完整的动态请求头映射表
-     * @returns {Record<string, string>} 映射表对象
-     */
     public getHeaders(): Record<string, string> {
         return this.dynamicHeaders;
     }
 
-    /**
-     * 清除本地鉴权状态
-     * 触发 401 时重置状态锁，以便后续请求重新进入挂起等待
-     */
     public clearAuth(): void {
-        delete this.dynamicHeaders['Authorization'];
+        delete this.dynamicHeaders['authorization'];
         this.isSessionTokenReady = false;
         localStorage.removeItem(this.AUTH_STORAGE_KEY);
     }

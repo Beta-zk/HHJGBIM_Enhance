@@ -1,38 +1,39 @@
-import { WAREHOUSE_DATA_STATS_URL } from '../config/constants';
+import { API_URLS } from '../config/constants';
 import { projectService } from '../services/ProjectService'; 
-import { findArrayWithKey } from '../utils/helpers';
 import { BimProjectItem, PlmEntityItem } from '../types';
 
 export class ProjectInventoryEnhance {
     
     private injectTargetData(warehouseJson: any, plmJson: any): any {
         try {
-            if (!plmJson) return warehouseJson;
+            if (!plmJson || !warehouseJson) return warehouseJson;
 
-            const plmItems = findArrayWithKey(plmJson, 'Short_Name') || findArrayWithKey(plmJson, 'Project_Name') || [];
+            const plmItems: PlmEntityItem[] = plmJson?.Data?.Data || plmJson?.Data || [];
+            const warehouseItems: BimProjectItem[] = warehouseJson?.Data?.Data || [];
+
+            if (warehouseItems.length === 0 || plmItems.length === 0) return warehouseJson;
+
             const stateMap = new Map<string, string>();
-            plmItems.forEach((item: PlmEntityItem) => {
+            plmItems.forEach(item => {
                 const key = item.Short_Name || item.Project_Name;
                 if (key && item.State_Name !== undefined) {
                     stateMap.set(key, item.State_Name);
                 }
             });
 
-            const warehouseItems = findArrayWithKey(warehouseJson, 'Project_Name') as BimProjectItem[];
-            if (warehouseItems && warehouseItems.length > 0) {
-                let modifiedCount = 0;
-                warehouseItems.forEach(item => {
-                    if (item && item.Project_Name) {
-                        if (stateMap.has(item.Project_Name)) {
-                            item.State_Name = stateMap.get(item.Project_Name)!;
-                            modifiedCount++;
-                        } else if (item.State_Name === undefined) {
-                            item.State_Name = null;
-                        }
+            let modifiedCount = 0;
+            warehouseItems.forEach(item => {
+                if (item?.Project_Name) {
+                    if (stateMap.has(item.Project_Name)) {
+                        item.State_Name = stateMap.get(item.Project_Name)!;
+                        modifiedCount++;
+                    } else if (item.State_Name === undefined) {
+                        item.State_Name = null;
                     }
-                });
-                console.log(`[HHJGBIM_Enhance] 拦截成功，注入 ${modifiedCount} 条状态`);
-            }
+                }
+            });
+            
+            console.log(`[HHJGBIM_Enhance] 拦截成功，静态寻址注入 ${modifiedCount} 条状态`);
             return warehouseJson;
         } catch (error) {
             console.error('[HHJGBIM_Enhance] 数据解析注入异常:', error);
@@ -58,7 +59,8 @@ export class ProjectInventoryEnhance {
         XMLHttpRequest.prototype.send = function(...args: any[]) {
             const url = (this as any)._bizRequestUrl || '';
 
-            if (url.includes(WAREHOUSE_DATA_STATS_URL)) {
+            // 更新点：使用 API_URLS.WAREHOUSE_DATA_STATS
+            if (url.includes(API_URLS.WAREHOUSE_DATA_STATS)) {
                 const originalResponseTextGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText')?.get;
                 const originalResponseGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
                 
@@ -84,11 +86,8 @@ export class ProjectInventoryEnhance {
 
                 Object.defineProperty(this, 'responseText', {
                     get: () => {
-                        if (this.readyState === 4) {
-                            processResponseOnce();
-                            return cachedText;
-                        }
-                        return originalResponseTextGetter ? originalResponseTextGetter.call(this) : '';
+                        if (this.readyState === 4) processResponseOnce();
+                        return cachedText !== null ? cachedText : (originalResponseTextGetter ? originalResponseTextGetter.call(this) : '');
                     },
                     configurable: true,
                     enumerable: true
@@ -96,11 +95,8 @@ export class ProjectInventoryEnhance {
 
                 Object.defineProperty(this, 'response', {
                     get: () => {
-                        if (this.readyState === 4) {
-                            processResponseOnce();
-                            return cachedResponse;
-                        }
-                        return originalResponseGetter ? originalResponseGetter.call(this) : null;
+                        if (this.readyState === 4) processResponseOnce();
+                        return cachedResponse !== null ? cachedResponse : (originalResponseGetter ? originalResponseGetter.call(this) : null);
                     },
                     configurable: true,
                     enumerable: true
@@ -123,7 +119,8 @@ export class ProjectInventoryEnhance {
         window.fetch = async function(...args: any[]) {
             const requestUrl = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
 
-            if (requestUrl.includes(WAREHOUSE_DATA_STATS_URL)) {
+            // 更新点：使用 API_URLS.WAREHOUSE_DATA_STATS
+            if (requestUrl.includes(API_URLS.WAREHOUSE_DATA_STATS)) {
                 const [response, plmJson] = await Promise.all([
                     originalFetch.apply(this, args as any),
                     projectService.fetchProjectEntities()
