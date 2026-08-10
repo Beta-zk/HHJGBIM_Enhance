@@ -1,8 +1,10 @@
 /**
  * @interface IResponseInterceptor
- * @description 响应拦截器规范定义
+ * @description 响应拦截器规范定义 (V2 增强版)
  */
 export interface IResponseInterceptor {
+    /** @property {string} id - 拦截器全局唯一标识，用于注册表去重与溯源 */
+    id: string;
     urlMatcher: (url: string) => boolean;
     beforeRequest?: () => Promise<any>;
     handler: (originalJson: any, prefetchData?: any) => any;
@@ -10,7 +12,7 @@ export interface IResponseInterceptor {
 
 /**
  * @class NetworkHook
- * @description 底层网络通讯挂钩单例。严禁在此处混入任何具体业务逻辑。
+ * @description 底层网络通讯挂钩单例。
  */
 export class NetworkHook {
     private static instance: NetworkHook;
@@ -44,8 +46,21 @@ export class NetworkHook {
         this.headerSniffers.push(callback);
     }
 
+    /**
+     * @method registerResponseInterceptor
+     * @description 注册或覆盖响应拦截器。采用严格 ID 比对以避免内存泄漏与重复执行。
+     * @param {IResponseInterceptor} interceptor 实现了规范的拦截器实例
+     * @returns {void}
+     */
     public registerResponseInterceptor(interceptor: IResponseInterceptor): void {
-        this.responseInterceptors.push(interceptor);
+        const existingIndex = this.responseInterceptors.findIndex(i => i.id === interceptor.id);
+        
+        if (existingIndex !== -1) {
+            console.warn(`[HHJGBIM_Enhance] 拦截器注册表警告: [${interceptor.id}] 已存在，执行覆盖更新策略。`);
+            this.responseInterceptors[existingIndex] = interceptor;
+        } else {
+            this.responseInterceptors.push(interceptor);
+        }
     }
 
     private triggerHeaderSniffers(key: string, value: string): void {
@@ -125,7 +140,7 @@ export class NetworkHook {
                         prefetchData = data;
                         executeSend();
                     }).catch(error => {
-                        console.error('[HHJGBIM_Enhance] 前置依赖请求异常，执行降级放行:', error);
+                        console.error(`[HHJGBIM_Enhance] 前置依赖请求异常 [拦截器: ${matchedInterceptor.id}]，执行降级放行:`, error);
                         executeSend();
                     });
                 } else {

@@ -5,16 +5,9 @@ import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProjectInventoryEnhance
- * @description 仓储项目数据清洗注入类。负责将 PLM 系统的数据状态映射注入到仓库数据视图中。
+ * @description 仓储项目数据清洗注入类。
  */
 export class ProjectInventoryEnhance {
-    /**
-     * @method injectTargetData
-     * @description 执行核心业务数据清洗与合并。
-     * @param {any} warehouseJson 原始仓储 API 响应数据
-     * @param {any} plmJson 预加载的 PLM 系统实体数据
-     * @returns {any} 清洗篡改后的响应数据体
-     */
     private injectTargetData(warehouseJson: any, plmJson: any): any {
         try {
             if (!plmJson || !warehouseJson) return warehouseJson;
@@ -50,22 +43,15 @@ export class ProjectInventoryEnhance {
         }
     }
 
-    /**
-     * @method init
-     * @description 初始化挂载拦截器。采用严格路径解析校验，取代脆弱的模糊匹配。
-     * @returns {void}
-     */
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
+            id: 'INTERCEPTOR_WAREHOUSE_STATS', // 新增：提供明确的哈希寻址标的
             urlMatcher: (url: string) => {
                 try {
-                    // 构建标准化 URL 对象以剥离 Query 参数干扰
                     const requestUrl = new URL(url, window.location.origin);
                     const targetUrl = new URL(API_URLS.WAREHOUSE_DATA_STATS);
-                    // 严格校验 pathname 确保靶向准确性
                     return requestUrl.pathname === targetUrl.pathname;
                 } catch (error) {
-                    // 可信度/兼容性存疑：处理相对路径残缺等异常网络请求特征
                     return false; 
                 }
             },
@@ -74,6 +60,6 @@ export class ProjectInventoryEnhance {
                 return this.injectTargetData(originalJson, prefetchData);
             }
         });
-        console.log('[HHJGBIM_Enhance] 数据清洗增强服务已注册 (安全模式)');
+        console.log('[HHJGBIM_Enhance] 数据清洗增强服务已注册 (去重模式激活)');
     }
 }
