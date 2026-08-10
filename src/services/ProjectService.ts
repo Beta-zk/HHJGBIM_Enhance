@@ -3,7 +3,7 @@
  * 负责获取及缓存 PLM 系统相关的项目实体数据。
  */
 import { API_URLS } from '../config/constants';
-import { HttpService } from '../core/HttpService';
+import { GMHttpClient } from '../core/GMHttpClient';
 import { authService } from './AuthService';
 
 class ProjectService {
@@ -21,7 +21,7 @@ class ProjectService {
 
         await authService.waitForToken();
 
-        this.fetchPromise = HttpService.post(API_URLS.PLM_PROJECT_ENTITIES, this.defaultPayload)
+        this.fetchPromise = GMHttpClient.post(API_URLS.PLM_PROJECT_ENTITIES, this.defaultPayload)
             .then(json => {
                 if (json) {
                     this.cachedPlmJson = json;

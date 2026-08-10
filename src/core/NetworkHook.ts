@@ -1,22 +1,19 @@
 /**
  * @interface IResponseInterceptor
- * @description 响应拦截器规范定义（修复版：拆分前置 IO 与同步篡改）
+ * @description 响应拦截器规范定义
  */
 export interface IResponseInterceptor {
-    /** 路由匹配器 */
     urlMatcher: (url: string) => boolean;
-    /** 在原生请求发出前的前置异步钩子（用于预拉取跨域依赖数据） */
     beforeRequest?: () => Promise<any>;
-    /** 同步篡改响应体的处理器，杜绝异步竞态 */
     handler: (originalJson: any, prefetchData?: any) => any;
 }
 
 /**
- * @class NetworkManager
- * @description 网络通讯全域代理单例。
+ * @class NetworkHook
+ * @description 底层网络通讯挂钩单例。严禁在此处混入任何具体业务逻辑。
  */
-export class NetworkManager {
-    private static instance: NetworkManager;
+export class NetworkHook {
+    private static instance: NetworkHook;
     private headerSniffers: Array<(key: string, value: string) => void> = [];
     private responseInterceptors: IResponseInterceptor[] = [];
     private isInitialized = false;
@@ -25,13 +22,14 @@ export class NetworkManager {
 
     /**
      * @method getInstance
-     * @returns {NetworkManager}
+     * @description 获取挂钩基建单例
+     * @returns {NetworkHook}
      */
-    public static getInstance(): NetworkManager {
-        if (!NetworkManager.instance) {
-            NetworkManager.instance = new NetworkManager();
+    public static getInstance(): NetworkHook {
+        if (!NetworkHook.instance) {
+            NetworkHook.instance = new NetworkHook();
         }
-        return NetworkManager.instance;
+        return NetworkHook.instance;
     }
 
     public init(): void {
@@ -39,6 +37,7 @@ export class NetworkManager {
         this.hijackXHR();
         this.hijackFetch();
         this.isInitialized = true;
+        console.log('[HHJGBIM_Enhance] 挂钩基建: NetworkHook 初始化完毕');
     }
 
     public registerHeaderSniffer(callback: (key: string, value: string) => void): void {
@@ -53,10 +52,6 @@ export class NetworkManager {
         this.headerSniffers.forEach(fn => fn(key, value));
     }
 
-    /**
-     * @method hijackXHR
-     * @description 重构 XHR 劫持逻辑，通过闭包保障前置请求的顺序控制，恢复严格同步读取。
-     */
     private hijackXHR(): void {
         const originalOpen = XMLHttpRequest.prototype.open;
         const originalSend = XMLHttpRequest.prototype.send;
@@ -81,7 +76,6 @@ export class NetworkManager {
                 let prefetchData: any = null;
                 const xhrInstance = this;
 
-                // 封装核心的原生请求放行逻辑
                 const executeSend = () => {
                     const originalResponseTextGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText')?.get;
                     const originalResponseGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
@@ -96,8 +90,6 @@ export class NetworkManager {
                         try {
                             const rawText = originalResponseTextGetter ? originalResponseTextGetter.call(xhrInstance) : (xhrInstance as any).response;
                             const originalJson = JSON.parse(rawText);
-                            
-                            // 执行【严格同步】的数据篡改
                             const modifiedJson = matchedInterceptor.handler(originalJson, prefetchData);
                             cachedText = JSON.stringify(modifiedJson);
                             cachedResponse = xhrInstance.responseType === 'json' ? modifiedJson : cachedText;
@@ -128,13 +120,12 @@ export class NetworkManager {
                     originalSend.apply(xhrInstance, args as any);
                 };
 
-                // 判断是否存在前置依赖查询任务，决定是否阻塞放行
                 if (matchedInterceptor.beforeRequest) {
                     matchedInterceptor.beforeRequest().then(data => {
                         prefetchData = data;
                         executeSend();
                     }).catch(error => {
-                        console.error('[HHJGBIM_Enhance] 前置请求失败，执行降级直连:', error);
+                        console.error('[HHJGBIM_Enhance] 前置依赖请求异常，执行降级放行:', error);
                         executeSend();
                     });
                 } else {
@@ -147,10 +138,6 @@ export class NetworkManager {
         };
     }
 
-    /**
-     * @method hijackFetch
-     * @description Fetch代理同理改造以适配双阶段拦截器。
-     */
     private hijackFetch(): void {
         const originalFetch = window.fetch;
         const self = this;

@@ -1,5 +1,5 @@
 import { authService } from '../services/AuthService';
-import { NetworkManager } from './NetworkManager';
+import { NetworkHook } from './NetworkHook';
 
 /**
  * @class AuthInterceptor
@@ -12,7 +12,7 @@ export class AuthInterceptor {
      * @returns {void}
      */
     public init(): void {
-        NetworkManager.getInstance().registerHeaderSniffer((key, value) => {
+        NetworkHook.getInstance().registerHeaderSniffer((key, value) => {
             authService.updateHeaders(key, value);
         });
         console.log('[HHJGBIM_Enhance] 鉴权嗅探业务已注册至总线');

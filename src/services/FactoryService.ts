@@ -2,7 +2,7 @@
  * 工厂数据服务类
  */
 import { API_URLS } from '../config/constants';
-import { HttpService } from '../core/HttpService';
+import { GMHttpClient } from '../core/GMHttpClient';
 import { authService } from './AuthService';
 
 class FactoryService {
@@ -12,7 +12,7 @@ class FactoryService {
         const targetYear = year || new Date().getFullYear().toString();
         const payload = { year: targetYear };
         
-        return await HttpService.post(API_URLS.MONTHLY_FACTORY_OUTPUT, payload);
+        return await GMHttpClient.post(API_URLS.MONTHLY_FACTORY_OUTPUT, payload);
     }
 }
 
