@@ -1,3 +1,4 @@
+import { NetworkManager } from './core/NetworkManager';
 import { AuthInterceptor } from './core/AuthInterceptor';
 import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
 import { createApp } from 'vue';
@@ -7,21 +8,21 @@ import App from './View/App.vue';
     'use strict';
     
     /** 
-     * @description 1. 初始化全局鉴权与请求头静默嗅探拦截器 
+     * @description 1. 优先实例化并启动全局单例网络基建
+     */
+    NetworkManager.getInstance().init();
+
+    /** 
+     * @description 2. 依次初始化并注册各业务插件 
      */
     new AuthInterceptor().init();
-    
-    /** 
-     * @description 2. 初始化各业务增强模块 
-     */
     new ProjectInventoryEnhance().init();
     
-    console.log('[HHJGBIM_Enhance] 核心模块加载完毕。鉴权拦截器已就绪。');
+    console.log('[HHJGBIM_Enhance] 核心基建与业务插件加载完毕');
 
     /**
      * @function mountVueUI
-     * @description 3. 安全挂载 Vue UI 容器，规避 DOM 尚未加载的异常
-     * @returns {void}
+     * @description 3. 安全挂载 Vue UI 容器
      */
     const mountVueUI = () => {
         const uiContainer = document.createElement('div');
@@ -32,9 +33,6 @@ import App from './View/App.vue';
         app.mount(uiContainer);
     };
 
-    /** 
-     * @description 兼容 document-start 模式下的安全 DOM 注入 
-     */
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', mountVueUI);
     } else {

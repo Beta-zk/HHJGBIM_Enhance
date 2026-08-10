@@ -1,19 +1,17 @@
 import { API_URLS } from '../config/constants';
 import { projectService } from '../services/ProjectService'; 
 import { BimProjectItem, PlmEntityItem } from '../types';
+import { NetworkManager } from './NetworkManager';
 
 /**
  * @class ProjectInventoryEnhance
- * @description 项目库存数据增强模块，负责静态寻址注入核心状态属性，并提供符合静态类型约束的脏数据兜底清洗。
+ * @description 项目库存数据增强模块。基于拆分后的响应总线实现脏数据兜底清洗。
  */
 export class ProjectInventoryEnhance {
     
     /**
      * @method injectTargetData
-     * @description 执行数据注入解析，统计修改条目，并安全规避 TS2367 异常以实现兜底清洗。
-     * @param {any} warehouseJson 仓储原始数据
-     * @param {any} plmJson PLM原始数据
-     * @returns {any} 突变处理后的新数据对象
+     * @description 执行数据注入解析（现为纯同步函数）。
      */
     private injectTargetData(warehouseJson: any, plmJson: any): any {
         try {
@@ -39,10 +37,6 @@ export class ProjectInventoryEnhance {
                         item.State_Name = stateMap.get(item.Project_Name)!;
                         modifiedCount++;
                     } else {
-                        /** 
-                         * @description 脏数据清洗：运用 String() 显式转换消除 TypeScript 静态检查报错（TS2367），
-                         * 同步兼容后端可能返回的 string 型 '0' 与 number 型 0。
-                         */
                         if (!item.State_Name || String(item.State_Name) === '0') {
                             item.State_Name = '未知';
                         }
@@ -60,125 +54,18 @@ export class ProjectInventoryEnhance {
 
     /**
      * @method init
-     * @description 挂载针对XHR与Fetch底层协议的拦截代理。
-     * @returns {void}
+     * @description 注册拆分后的双阶篡改拦截器。
      */
     public init(): void {
-        this.hijackXHR();
-        this.hijackFetch();
-    }
-
-    /**
-     * @method hijackXHR
-     * @description 代理重写 XMLHttpRequest 以介入数据通讯过程。
-     * @returns {void}
-     */
-    private hijackXHR(): void {
-        const originalXHROpen = XMLHttpRequest.prototype.open;
-        const originalXHRSend = XMLHttpRequest.prototype.send;
-
-        XMLHttpRequest.prototype.open = function(method: string, url: string | URL) {
-            (this as any)._bizRequestUrl = url.toString();
-            return originalXHROpen.apply(this, arguments as any);
-        };
-
-        const self = this;
-        XMLHttpRequest.prototype.send = function(...args: any[]) {
-            const url = (this as any)._bizRequestUrl || '';
-
-            /** @description 约束判定：锁定对应的数据统计接口进行数据拦截过滤 */
-            if (url.includes(API_URLS.WAREHOUSE_DATA_STATS)) {
-                const originalResponseTextGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText')?.get;
-                const originalResponseGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
-                
-                let isProcessed = false;
-                let cachedText: string | null = null;
-                let cachedResponse: any = null;
-                let plmDataCache: any = null;
-
-                const processResponseOnce = () => {
-                    if (isProcessed) return;
-                    isProcessed = true;
-                    try {
-                        const rawText = originalResponseTextGetter ? originalResponseTextGetter.call(this) : (this as any).response;
-                        const originalJson = JSON.parse(rawText);
-                        const modifiedJson = self.injectTargetData(originalJson, plmDataCache);
-                        cachedText = JSON.stringify(modifiedJson);
-                        cachedResponse = this.responseType === 'json' ? modifiedJson : cachedText;
-                    } catch (e) {
-                        cachedText = originalResponseTextGetter ? originalResponseTextGetter.call(this) : null;
-                        cachedResponse = originalResponseGetter ? originalResponseGetter.call(this) : null;
-                    }
-                };
-
-                Object.defineProperty(this, 'responseText', {
-                    get: () => {
-                        if (this.readyState === 4) processResponseOnce();
-                        return cachedText !== null ? cachedText : (originalResponseTextGetter ? originalResponseTextGetter.call(this) : '');
-                    },
-                    configurable: true,
-                    enumerable: true
-                });
-
-                Object.defineProperty(this, 'response', {
-                    get: () => {
-                        if (this.readyState === 4) processResponseOnce();
-                        return cachedResponse !== null ? cachedResponse : (originalResponseGetter ? originalResponseGetter.call(this) : null);
-                    },
-                    configurable: true,
-                    enumerable: true
-                });
-
-                projectService.fetchProjectEntities().then((plmJson) => { 
-                    plmDataCache = plmJson;
-                    originalXHRSend.apply(this, args as any); 
-                });
-            } else {
-                originalXHRSend.apply(this, args as any);
+        NetworkManager.getInstance().registerResponseInterceptor({
+            urlMatcher: (url: string) => url.includes(API_URLS.WAREHOUSE_DATA_STATS),
+            // 阶段一：前置挂起，拉取跨域 PLM 依赖数据
+            beforeRequest: () => projectService.fetchProjectEntities(),
+            // 阶段二：响应就绪，纯内存同步注入，杜绝前端 Vue 视图漏绑
+            handler: (originalJson: any, prefetchData: any) => {
+                return this.injectTargetData(originalJson, prefetchData);
             }
-        };
-    }
-
-    /**
-     * @method hijackFetch
-     * @description 代理重写 Fetch 以介入数据通讯过程。
-     * @returns {void}
-     */
-    private hijackFetch(): void {
-        const originalFetch = window.fetch;
-        const self = this;
-        
-        window.fetch = async function(...args: any[]) {
-            const requestUrl = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
-
-            /** @description 约束判定：锁定对应的数据统计接口进行数据拦截过滤 */
-            if (requestUrl.includes(API_URLS.WAREHOUSE_DATA_STATS)) {
-                const [response, plmJson] = await Promise.all([
-                    originalFetch.apply(this, args as any),
-                    projectService.fetchProjectEntities()
-                ]);
-                
-                try {
-                    const cloneRes = response.clone();
-                    const warehouseJson = await cloneRes.json();
-                    
-                    const modifiedJson = self.injectTargetData(warehouseJson, plmJson);
-                    const modifiedStr = JSON.stringify(modifiedJson);
-                    
-                    return new Proxy(response, {
-                        get(target, prop, receiver) {
-                            if (prop === 'json') return async () => modifiedJson;
-                            if (prop === 'text') return async () => modifiedStr;
-                            
-                            const value = Reflect.get(target, prop, receiver);
-                            return typeof value === 'function' ? value.bind(target) : value;
-                        }
-                    });
-                } catch (error) {
-                    return response;
-                }
-            }
-            return await originalFetch.apply(this, args as any);
-        };
+        });
+        console.log('[HHJGBIM_Enhance] 仓储数据清洗业务已注册至总线 (双阶同步版)');
     }
 }
