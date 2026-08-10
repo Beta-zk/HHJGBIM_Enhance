@@ -45,7 +45,7 @@ export class ProjectInventoryEnhance {
 
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
-            id: 'INTERCEPTOR_WAREHOUSE_STATS', // 新增：提供明确的哈希寻址标的
+            id: 'INTERCEPTOR_WAREHOUSE_STATS',
             urlMatcher: (url: string) => {
                 try {
                     const requestUrl = new URL(url, window.location.origin);
@@ -60,6 +60,5 @@ export class ProjectInventoryEnhance {
                 return this.injectTargetData(originalJson, prefetchData);
             }
         });
-        console.log('[HHJGBIM_Enhance] 数据清洗增强服务已注册 (去重模式激活)');
     }
 }

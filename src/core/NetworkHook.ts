@@ -39,7 +39,7 @@ export class NetworkHook {
         this.hijackXHR();
         this.hijackFetch();
         this.isInitialized = true;
-        console.log('[HHJGBIM_Enhance] 挂钩基建: NetworkHook 初始化完毕');
+        console.log('[HHJGBIM_Enhance] NetworkHook 初始化完毕');
     }
 
     public registerHeaderSniffer(callback: (key: string, value: string) => void): void {
