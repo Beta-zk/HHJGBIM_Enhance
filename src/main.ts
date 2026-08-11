@@ -1,6 +1,7 @@
 import { NetworkHook } from './core/NetworkHook';
 import { authService } from './services/AuthService';
 import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
+import { ProductionIntegrationBigScreenEnhance } from './core/ProductionIntegrationBigScreenEnhance';
 import { createApp } from 'vue';
 import App from './View/App.vue';
 
@@ -15,6 +16,9 @@ import App from './View/App.vue';
 
     /** 第三序列：挂载应用层拦截清洗业务插件 */
     new ProjectInventoryEnhance().init();
+    
+    // [新增] 挂载大屏DOM增强交互插件
+    new ProductionIntegrationBigScreenEnhance().init();
     
     console.log('[HHJGBIM_Enhance] 工程引擎全组件加载合龙');
 
