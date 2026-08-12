@@ -2,13 +2,13 @@ import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProductionIntegrationBigScreenEnhance
- * @description 生产集成大屏增强类。劫持看板元素点击事件，通过模拟点击宿主侧边栏菜单，实现无缝内部标签页跳转。
+ * @description UI 层交互增强组件。通过 DOM 轮询与事件委托机制，将静态看板元素与宿主 SPA 路由实现跨层级桥接。
  */
 export class ProductionIntegrationBigScreenEnhance {
     
     /**
      * @method init
-     * @description 初始化挂载网络拦截嗅探器
+     * @description 初始化生命周期，注入看板路由网络嗅探器。
      */
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
@@ -23,7 +23,8 @@ export class ProductionIntegrationBigScreenEnhance {
 
     /**
      * @method injectDomInteraction
-     * @description 异步轮询目标 DOM 容器，注入隔离的点击事件，并执行动态菜单项映射。
+     * @description 异步轮询目标 DOM 容器，实现隔离事件的透明注入。
+     * @private
      */
     private injectDomInteraction(): void {
         const MAX_ATTEMPTS = 20;
@@ -37,7 +38,6 @@ export class ProductionIntegrationBigScreenEnhance {
             if (rightBoxes.length >= 2) {
                 let successfulInjections = 0;
 
-                // 配置矩阵：将 URL 替换为目标侧边栏菜单的特征文本
                 const targetConfigs = [
                     { 
                         container: rightBoxes[0], 
@@ -62,7 +62,6 @@ export class ProductionIntegrationBigScreenEnhance {
                                 targetSpan.setAttribute(config.flag, 'true');
                                 targetSpan.style.cursor = 'pointer';
                                 
-                                // 注册劫持事件
                                 targetSpan.addEventListener('click', (e: MouseEvent) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -77,7 +76,7 @@ export class ProductionIntegrationBigScreenEnhance {
                 });
 
                 if (successfulInjections === targetConfigs.length) {
-                    console.log('[HHJGBIM_Enhance] 大屏元素劫持：宿主菜单物理级绑定合龙');
+                    console.log('[UI] 大屏交互挂载成功');
                     clearInterval(timer);
                     return;
                 }
@@ -85,27 +84,25 @@ export class ProductionIntegrationBigScreenEnhance {
 
             if (attempts >= MAX_ATTEMPTS) {
                 clearInterval(timer);
-                console.warn('[HHJGBIM_Enhance] 大屏元素劫持失败：目标 DOM 树未在规定时间内完整构建');
+                console.warn('[UI] 目标 DOM 树超时未就绪');
             }
         }, INTERVAL_MS);
     }
 
     /**
      * @method triggerSidebarMenuClick
-     * @description 在 DOM 树中实时检索指定文本的 Element Plus 菜单项，并派发点击事件。
-     * @param {string} targetText 目标菜单包含的唯一特征文本
+     * @description 在 DOM 树中检索特征菜单节点并派发物理级点击事件。
+     * @param {string} targetText 目标特征文本
+     * @private
      */
     private triggerSidebarMenuClick(targetText: string): void {
-        // 实时抓取侧边栏列表，规避 SPA 路由切换导致的节点失活问题
         const menuItems = document.querySelectorAll('.ep-menu-item');
         let isMatchFound = false;
 
         for (let i = 0; i < menuItems.length; i++) {
             const item = menuItems[i] as HTMLElement;
             
-            // 采用包含匹配机制，防范 DOM 内存在首尾空格或隐藏换行符
             if (item.textContent && item.textContent.includes(targetText)) {
-                // 模拟物理设备点击触发
                 item.click();
                 isMatchFound = true;
                 break;
@@ -113,7 +110,7 @@ export class ProductionIntegrationBigScreenEnhance {
         }
 
         if (!isMatchFound) {
-            console.error(`[HHJGBIM_Enhance] 宿主交互异常：未能定位到侧边栏节点 [${targetText}]，请检查用户权限或视图状态。`);
+            console.error(`[UI] 侧边栏节点未命中: ${targetText}`);
         }
     }
 }

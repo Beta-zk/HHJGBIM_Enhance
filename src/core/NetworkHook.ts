@@ -1,9 +1,9 @@
 /**
  * @interface IResponseInterceptor
- * @description 响应拦截器规范定义 (V2 增强版)
+ * @description 网络响应拦截器模型。定义路由匹配规则与生命周期钩子，支撑动态数据回填与流量重放。
  */
 export interface IResponseInterceptor {
-    /** @property {string} id - 拦截器全局唯一标识，用于注册表去重与溯源 */
+    /** @property {string} id 拦截器全局唯一标识 */
     id: string;
     urlMatcher: (url: string) => boolean;
     beforeRequest?: () => Promise<any>;
@@ -12,7 +12,7 @@ export interface IResponseInterceptor {
 
 /**
  * @class NetworkHook
- * @description 底层网络通讯挂钩单例。
+ * @description 底层网络流量劫持基建。通过重写 XHR 与 Fetch 原型链，提供无侵入式的请求/响应拦截及 Header 嗅探管线。
  */
 export class NetworkHook {
     private static instance: NetworkHook;
@@ -24,7 +24,7 @@ export class NetworkHook {
 
     /**
      * @method getInstance
-     * @description 获取挂钩基建单例
+     * @description 获取挂钩基建单例实例。
      * @returns {NetworkHook}
      */
     public static getInstance(): NetworkHook {
@@ -39,7 +39,6 @@ export class NetworkHook {
         this.hijackXHR();
         this.hijackFetch();
         this.isInitialized = true;
-        console.log('[HHJGBIM_Enhance] NetworkHook 初始化完毕');
     }
 
     public registerHeaderSniffer(callback: (key: string, value: string) => void): void {
@@ -48,15 +47,15 @@ export class NetworkHook {
 
     /**
      * @method registerResponseInterceptor
-     * @description 注册或覆盖响应拦截器。采用严格 ID 比对以避免内存泄漏与重复执行。
-     * @param {IResponseInterceptor} interceptor 实现了规范的拦截器实例
+     * @description 挂载响应拦截器，实施严格 ID 比对以防止热重载导致的内存泄漏。
+     * @param {IResponseInterceptor} interceptor 拦截器实例
      * @returns {void}
      */
     public registerResponseInterceptor(interceptor: IResponseInterceptor): void {
         const existingIndex = this.responseInterceptors.findIndex(i => i.id === interceptor.id);
         
         if (existingIndex !== -1) {
-            console.warn(`[HHJGBIM_Enhance] 拦截器注册表警告: [${interceptor.id}] 已存在，执行覆盖更新策略。`);
+            console.warn(`[Hook] 拦截器冲突覆盖: ${interceptor.id}`);
             this.responseInterceptors[existingIndex] = interceptor;
         } else {
             this.responseInterceptors.push(interceptor);
@@ -140,7 +139,7 @@ export class NetworkHook {
                         prefetchData = data;
                         executeSend();
                     }).catch(error => {
-                        console.error(`[HHJGBIM_Enhance] 前置依赖请求异常 [拦截器: ${matchedInterceptor.id}]，执行降级放行:`, error);
+                        console.error(`[Hook] 前置依赖阻断 [${matchedInterceptor.id}]`, error);
                         executeSend();
                     });
                 } else {

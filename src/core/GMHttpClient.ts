@@ -4,20 +4,20 @@ declare const GM_xmlhttpRequest: any;
 
 /**
  * @class GMHttpClient
- * @description 跨域 HTTP 请求客户端。封装底层沙盒提权 API，提供主动网络请求能力。
+ * @description 沙盒提权 HTTP 客户端，绕过原生同源策略，负责全量跨域通信，集成自动鉴权拦截与状态机联动。
  */
 export class GMHttpClient {
     /**
      * @method post
-     * @description 执行特权跨域 POST 请求。
-     * @param {string} url 目标寻址
-     * @param {any} payload 载荷体
-     * @returns {Promise<any>}
+     * @description 发起特权 POST 通讯，内置 401 态自动清理鉴权凭证逻辑。
+     * @param {string} url 目标绝对寻址
+     * @param {any} payload 数据载荷
+     * @returns {Promise<any>} 反序列化响应体
      */
     public static async post(url: string, payload: any): Promise<any> {
         return new Promise((resolve) => {
             if (typeof GM_xmlhttpRequest === 'undefined') {
-                console.error('[HHJGBIM_Enhance] 致命环境异常: GM_xmlhttpRequest 未授权或缺失。');
+                console.error('[Network] GM_xmlhttpRequest 未授权');
                 resolve(null);
                 return;
             }
@@ -33,7 +33,7 @@ export class GMHttpClient {
                         try {
                             const json = JSON.parse(response.responseText);
                             if (json && json.StatusCode === 401) {
-                                console.warn(`[HHJGBIM_Enhance] 鉴权逾期异常 | 目标接口: ${url}`);
+                                console.warn(`[Network] 鉴权逾期: ${url}`);
                                 authService.clearAuth();
                                 resolve(null);
                                 return;

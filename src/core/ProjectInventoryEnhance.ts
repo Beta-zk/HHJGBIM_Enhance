@@ -5,7 +5,7 @@ import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProjectInventoryEnhance
- * @description 仓储项目数据清洗注入类。
+ * @description 业务数据清洗中间件。利用网络拦截基建，合并 PLM 微服务与仓储服务的数据集，实现实体状态的动态注入。
  */
 export class ProjectInventoryEnhance {
     private injectTargetData(warehouseJson: any, plmJson: any): any {
@@ -38,7 +38,7 @@ export class ProjectInventoryEnhance {
             });
             return warehouseJson;
         } catch (error) {
-            console.error('[HHJGBIM_Enhance] 数据清洗异常，执行静默降级:', error);
+            console.error('[Middleware] 数据清洗异常', error);
             return warehouseJson;
         }
     }

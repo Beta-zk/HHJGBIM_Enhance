@@ -1,5 +1,6 @@
 /**
- * Vue 单文件组件类型声明
+ * @module vue
+ * @description Vue SFC 泛型系统声明映射。
  */
 declare module '*.vue' {
   import type { DefineComponent } from 'vue';

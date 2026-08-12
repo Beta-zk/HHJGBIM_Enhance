@@ -5,7 +5,7 @@ import { settings } from '../config/settings';
 
 /**
  * @class ProjectService
- * @description 项目业务调度中心。提供项目数据获取及多级容灾降级服务。
+ * @description 项目实体聚合服务。内置请求熔断与双链路容灾策略，确保本地爬虫与线上兜底服务的平滑切换。
  */
 class ProjectService {
     private cachedPlmJson: any = null;
@@ -18,7 +18,7 @@ class ProjectService {
 
     /**
      * @method fetchProjectEntities
-     * @description 获取项目实体聚合数据。优先请求本地接口，遇阻则降级至线上系统。
+     * @description 拉取项目实体池数据，含内存级缓存防护机制。
      * @returns {Promise<any>}
      */
     public async fetchProjectEntities(): Promise<any> {
@@ -30,7 +30,6 @@ class ProjectService {
         this.fetchPromise = this.executeFetchStrategy().then(json => {
             if (json) {
                 this.cachedPlmJson = json;
-                console.log('[HHJGBIM_Enhance] 实体数据加载完毕');
             } else {
                 this.fetchPromise = null; 
             }
@@ -42,7 +41,7 @@ class ProjectService {
 
     /**
      * @method executeFetchStrategy
-     * @description 执行带熔断机制的阶梯请求策略。
+     * @description 调度多级网络降级链路。
      * @returns {Promise<any>}
      * @private
      */
@@ -50,11 +49,11 @@ class ProjectService {
         try {
             const localData = await this.fetchLocalInfo(3000);
             if (localData && Array.isArray(localData) && localData.length > 0) {
-                console.log('[HHJGBIM_Enhance] 命中本地项目服务');
+                console.log('[Service] 启用本地微服务链路');
                 return { Data: localData };
             }
         } catch (error) {
-            console.warn('[HHJGBIM_Enhance] 本地服务失联，已切至线上兜底');
+            console.warn('[Service] 链路降级至云端');
         }
 
         return await GMHttpClient.post(API_URLS.PLM_PROJECT_ENTITIES, this.defaultPayload);
@@ -62,7 +61,7 @@ class ProjectService {
 
     /**
      * @method fetchLocalInfo
-     * @description 向本地环境下发探测请求。采用动态配置的爬虫域名寻址。
+     * @description 向局域网爬虫下探并配置熔断超时管控。
      * @param {number} timeoutMs 熔断阈值（毫秒）
      * @returns {Promise<any>}
      * @private
@@ -73,7 +72,6 @@ class ProjectService {
                 resolve(null);
             }, timeoutMs);
 
-            // 动态组装完整 URL
             const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_PROJECT_INFO_PATH}`;
 
             GMHttpClient.post(url, {}).then(res => {

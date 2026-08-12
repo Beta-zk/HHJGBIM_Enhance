@@ -2,7 +2,7 @@ import { NetworkHook } from '../core/NetworkHook';
 
 /**
  * @class AuthService
- * @description 鉴权管理核心服务。包含状态存储、时效校验及底层嗅探事件流订阅。
+ * @description 鉴权状态机。订阅网络底层头部嗅探事件流，接管 Token 的提权、缓存续期与组件间的异步阻塞等待机制。
  */
 class AuthService {
     public dynamicHeaders: Record<string, string> = {
@@ -41,14 +41,13 @@ class AuthService {
 
     /**
      * @method initObserver
-     * @description 初始化挂钩观察者，绑定底层嗅探网络基建，实现闭环监听。
+     * @description 初始化观察者模式，与网络基建层完成生命周期绑定。
      * @returns {void}
      */
     public initObserver(): void {
         NetworkHook.getInstance().registerHeaderSniffer((key, value) => {
             this.updateHeaders(key, value);
         });
-        console.log('[HHJGBIM_Enhance] 鉴权状态机已挂载至底层嗅探总线');
     }
 
     public updateHeaders(key: string, value: string): void {

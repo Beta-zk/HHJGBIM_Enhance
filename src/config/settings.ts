@@ -1,6 +1,6 @@
 /**
  * @interface IUserSettings
- * @description 前端用户配置项结构规范
+ * @description 用户配置约束模型，定义前端增强特性的启停开关及微服务寻址域。
  */
 export interface IUserSettings {
     /** @property {boolean} 生产集成大屏增强功能开关 */
@@ -21,7 +21,7 @@ const STORAGE_KEY = 'HHJG_BIM_USER_SETTINGS';
 
 /**
  * @class SettingsManager
- * @description 用户配置管理器。采用单例模式管控应用级配置，提供缓存读取与动态暴露能力。
+ * @description 全局配置管理器，采用单例模式接管持久化存储的读写，确保应用生命周期内配置状态的一致性与安全降级。
  */
 class SettingsManager {
     private settings: IUserSettings;
@@ -32,8 +32,8 @@ class SettingsManager {
 
     /**
      * @method loadSettings
-     * @description 从本地存储反序列化配置项，若缺失或损坏则安全降级回填默认值
-     * @returns {IUserSettings}
+     * @description 执行配置反序列化，具备结构校验与异常熔断回退机制。
+     * @returns {IUserSettings} 运行时配置实例
      * @private
      */
     private loadSettings(): IUserSettings {
@@ -42,7 +42,7 @@ class SettingsManager {
             try {
                 return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
             } catch (e) {
-                console.warn('[HHJGBIM_Enhance] 配置文件解析异常，已重置为默认态');
+                console.warn('[System] 配置解析失效，已降级至默认配置');
                 return DEFAULT_SETTINGS;
             }
         }
@@ -51,18 +51,17 @@ class SettingsManager {
 
     /**
      * @method get
-     * @description 暴露当前运行时配置项对象的深拷贝或 JSON 表示
-     * @returns {IUserSettings}
+     * @description 暴露配置副本，阻断外部针对单例成员的直接内存篡改。
+     * @returns {IUserSettings} 配置快照
      */
     public get(): IUserSettings {
-        // 利用扩展运算符阻断外部针对成员变量的直接篡改
         return { ...this.settings };
     }
 
     /**
      * @method update
-     * @description 增量更新配置项并写入底层持久化存储
-     * @param {Partial<IUserSettings>} newSettings 配置变更载荷
+     * @description 增量更新内存状态并同步落盘持久化。
+     * @param {Partial<IUserSettings>} newSettings 变更载荷
      */
     public update(newSettings: Partial<IUserSettings>): void {
         this.settings = { ...this.settings, ...newSettings };
@@ -70,5 +69,4 @@ class SettingsManager {
     }
 }
 
-// 导出单例对象以供全局调用
 export const settings = new SettingsManager();

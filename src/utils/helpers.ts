@@ -1,14 +1,13 @@
 /**
  * @function showToast
- * @description 渲染全局状态提示吐司通知（现代高颜值版）。
- * @param {string} msg 提示内容文本
- * @param {boolean} [isSuccess=true] 布尔值标识是否为成功状态
+ * @description 全局独立 UI 渲染器。脱离 Vue 上下文提供原生 DOM 级别的轻量化状态反馈通知。
+ * @param {string} msg 通知内容
+ * @param {boolean} [isSuccess=true] 状态标识
  * @returns {void}
  */
 export function showToast(msg: string, isSuccess: boolean = true): void {
     const toast = document.createElement('div');
     
-    // SVG 图标定义
     const successIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
     const errorIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
 
@@ -28,7 +27,6 @@ export function showToast(msg: string, isSuccess: boolean = true): void {
         transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     `;
 
-    // 结构构建与文本转义（防 XSS）
     const iconSpan = document.createElement('span');
     iconSpan.style.display = 'flex';
     iconSpan.innerHTML = isSuccess ? successIcon : errorIcon;
@@ -43,13 +41,11 @@ export function showToast(msg: string, isSuccess: boolean = true): void {
         if (document.body) {
             document.body.appendChild(toast);
             
-            // 触发进场动画
             requestAnimationFrame(() => {
                 toast.style.opacity = '1';
                 toast.style.transform = 'translateY(0) scale(1)';
             });
 
-            // 定时退场
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px) scale(0.98)';
