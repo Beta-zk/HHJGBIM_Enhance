@@ -3,7 +3,7 @@ import { authService } from './services/AuthService';
 import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
 import { ProductionIntegrationBigScreenEnhance } from './core/ProductionIntegrationBigScreenEnhance';
 import { createApp } from 'vue';
-import App from './View/App.vue';
+import App from './view/App.vue';
 
 (function() {
     'use strict';

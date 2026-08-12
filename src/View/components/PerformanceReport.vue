@@ -7,22 +7,22 @@
       </div>
 
       <div class="dashboard-layout">
-        <!-- 左侧：原生 DOM 表格区 (红框范围)，支持局部垂直滚动 -->
+        <!-- 左侧：原生 DOM 表格区 -->
         <div class="table-section">
           <div class="table-wrapper">
-            
+
             <!-- 报表一：工厂产量 -->
-            <div class="native-table-container">
+            <div class="native-table-container" @mouseenter="activeChartType = 'factory'">
               <h3 class="table-title">工厂产量</h3>
               <table class="native-table">
                 <thead>
                   <tr>
-                    <th v-for="m in monthNames" :key="'out-h-'+m">{{ m }}</th>
+                    <th v-for="m in monthNames" :key="'out-h-' + m">{{ m }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td v-for="(v, index) in monthValues" :key="'out-v-'+index">{{ v }}</td>
+                    <td v-for="(v, index) in factoryMonthValues" :key="'out-v-' + index">{{ v }}</td>
                   </tr>
                   <tr>
                     <th colspan="3">第一季度</th>
@@ -31,27 +31,39 @@
                     <th colspan="3">第四季度</th>
                   </tr>
                   <tr>
-                    <td colspan="3">{{ formattedQuarterValues[0] }}</td>
-                    <td colspan="3">{{ formattedQuarterValues[1] }}</td>
-                    <td colspan="3">{{ formattedQuarterValues[2] }}</td>
-                    <td colspan="3">{{ formattedQuarterValues[3] }}</td>
+                    <td colspan="3">{{ factoryQuarterValues[0] }}</td>
+                    <td colspan="3">{{ factoryQuarterValues[1] }}</td>
+                    <td colspan="3">{{ factoryQuarterValues[2] }}</td>
+                    <td colspan="3">{{ factoryQuarterValues[3] }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             <!-- 报表二：深化重量 -->
-            <div class="native-table-container">
+            <div class="native-table-container" @mouseenter="activeChartType = 'component'">
               <h3 class="table-title">深化重量</h3>
               <table class="native-table">
                 <thead>
                   <tr>
-                    <th v-for="m in monthNames" :key="'weight-h-'+m">{{ m }}</th>
+                    <th v-for="m in monthNames" :key="'weight-h-' + m">{{ m }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td v-for="index in 12" :key="'weight-v-'+index">0</td>
+                    <td v-for="(v, index) in compMonthValues" :key="'weight-v-' + index">{{ v }}</td>
+                  </tr>
+                  <tr>
+                    <th colspan="3">第一季度</th>
+                    <th colspan="3">第二季度</th>
+                    <th colspan="3">第三季度</th>
+                    <th colspan="3">第四季度</th>
+                  </tr>
+                  <tr>
+                    <td colspan="3">{{ compQuarterValues[0] }}</td>
+                    <td colspan="3">{{ compQuarterValues[1] }}</td>
+                    <td colspan="3">{{ compQuarterValues[2] }}</td>
+                    <td colspan="3">{{ compQuarterValues[3] }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -59,16 +71,12 @@
 
           </div>
         </div>
-        
-        <!-- 右侧：动态图表组件区 (黄框范围) -->
+
+        <!-- 右侧：动态图表组件区 -->
         <div class="chart-section">
-          <!-- 预留动态组件插槽，未来可通过修改 activeChartComponent 无缝切换其它图表组件 -->
-          <component 
-            :is="activeChartComponent" 
-            :month-names="monthNames"
-            :month-values="monthValues"
-            :quarter-values="formattedQuarterValues"
-          />
+          <!-- 核心交互：通过 computed 计算属性驱动图表动态卸载与挂载 -->
+          <component :is="activeChartComponent" :month-names="monthNames" :month-values="currentChartMonthValues"
+            :quarter-values="currentChartQuarterValues" />
         </div>
       </div>
     </div>
@@ -76,24 +84,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef, onMounted, nextTick } from 'vue';
-// 引入解耦后的图表组件
+import { ref, computed, onMounted, nextTick } from 'vue';
 import FactoryOutputChart from './PerformanceReport/FactoryOutputChart.vue';
+import ComponentWeightChart from './PerformanceReport/ComponentWeightChart.vue';
 
 const props = defineProps<{
-  rawData: any[]
+  rawData: any[];
+  componentData: any;
 }>();
 
-// 使用 shallowRef 挂载组件，优化 Vue 底层代理性能，预留切换接口
-const activeChartComponent = shallowRef(FactoryOutputChart);
-
+// --- 基础数据结构 ---
 const monthNames = ref<string[]>([]);
-const monthValues = ref<number[]>([]);
-const formattedQuarterValues = ref<number[]>([]);
+
+// 工厂数据视图模型
+const factoryMonthValues = ref<number[]>([]);
+const factoryQuarterValues = ref<number[]>([]);
+
+// 深化重量视图模型
+const compMonthValues = ref<number[]>(new Array(12).fill(0));
+const compQuarterValues = ref<number[]>([0, 0, 0, 0]);
+
+// --- 交互控制体系 ---
+const activeChartType = ref<'factory' | 'component'>('factory');
+
+// 根据悬浮态动态映射依赖的图表组件
+const activeChartComponent = computed(() => {
+  return activeChartType.value === 'factory' ? FactoryOutputChart : ComponentWeightChart;
+});
+
+// 根据悬浮态动态派发数据层 Props
+const currentChartMonthValues = computed(() => {
+  return activeChartType.value === 'factory' ? factoryMonthValues.value : compMonthValues.value;
+});
+
+const currentChartQuarterValues = computed(() => {
+  return activeChartType.value === 'factory' ? factoryQuarterValues.value : compQuarterValues.value;
+});
 
 const monthMap: Record<string, string> = {
-  '1': '一月', '2': '二月', '3': '三月', '4': '四月', 
-  '5': '五月', '6': '六月', '7': '七月', '8': '八月', 
+  '1': '一月', '2': '二月', '3': '三月', '4': '四月',
+  '5': '五月', '6': '六月', '7': '七月', '8': '八月',
   '9': '九月', '10': '十月', '11': '十一月', '12': '十二月'
 };
 
@@ -103,38 +133,67 @@ onMounted(async () => {
 });
 
 const processData = () => {
+  // 1. 处理主链路：工厂产量数据
   const tempMonthNames: string[] = [];
-  const tempMonthValues: number[] = [];
-  const quarterValues = [0, 0, 0, 0];
+  const tempFactoryMonths: number[] = [];
+  const tempFactoryQuarters = [0, 0, 0, 0];
 
   props.rawData.forEach(item => {
     const val = item.Value || 0;
     const monthInt = parseInt(item.Name, 10);
-    
-    tempMonthNames.push(monthMap[item.Name] || `${item.Name}月`);
-    tempMonthValues.push(val);
 
-    if (monthInt >= 1 && monthInt <= 3) quarterValues[0] += val;
-    else if (monthInt >= 4 && monthInt <= 6) quarterValues[1] += val;
-    else if (monthInt >= 7 && monthInt <= 9) quarterValues[2] += val;
-    else if (monthInt >= 10 && monthInt <= 12) quarterValues[3] += val;
+    tempMonthNames.push(monthMap[item.Name] || `${item.Name}月`);
+    tempFactoryMonths.push(val);
+
+    if (monthInt >= 1 && monthInt <= 3) tempFactoryQuarters[0] += val;
+    else if (monthInt >= 4 && monthInt <= 6) tempFactoryQuarters[1] += val;
+    else if (monthInt >= 7 && monthInt <= 9) tempFactoryQuarters[2] += val;
+    else if (monthInt >= 10 && monthInt <= 12) tempFactoryQuarters[3] += val;
   });
 
-  monthNames.value = tempMonthNames;
-  monthValues.value = tempMonthValues;
-  formattedQuarterValues.value = quarterValues.map(v => Number(v.toFixed(3)));
+  monthNames.value = tempMonthNames.length === 12 ? tempMonthNames : Object.values(monthMap);
+  factoryMonthValues.value = tempFactoryMonths;
+  factoryQuarterValues.value = tempFactoryQuarters.map(v => Number(v.toFixed(3)));
+
+  // 2. 处理副链路：本地深化重量数据。缺失时静默降级为全零。
+  const tempCompMonths = new Array(12).fill(0);
+  const tempCompQuarters = [0, 0, 0, 0];
+
+  if (props.componentData && props.componentData.Data && Array.isArray(props.componentData.Data)) {
+    props.componentData.Data.forEach((item: any) => {
+      // 兼容 YYYY-MM 的切片提取逻辑
+      const parts = item.Month?.split('-');
+      if (parts && parts.length === 2) {
+        const mIdx = parseInt(parts[1], 10) - 1;
+        const val = item.GrossTotal || 0;
+
+        if (mIdx >= 0 && mIdx < 12) {
+          tempCompMonths[mIdx] = val;
+          const qIdx = Math.floor(mIdx / 3);
+          tempCompQuarters[qIdx] += val;
+        }
+      }
+    });
+  }
+
+  compMonthValues.value = tempCompMonths.map(v => Number(v.toFixed(3)));
+  compQuarterValues.value = tempCompQuarters.map(v => Number(v.toFixed(3)));
 };
 </script>
 
 <style scoped>
-/* 最顶层遮罩，锁定全局滚动 */
+/* 延续原有样式配置，未做删改 */
 .fullscreen-report-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  width: 100vw; height: 100vh;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: 2147483647;
   background-color: #1e293b;
-  overflow: hidden; /* 禁止全局视窗发生滚动 */
+  overflow: hidden;
 }
 
 .report-page-container {
@@ -152,101 +211,129 @@ const processData = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; /* 保证标题栏不被压缩 */
+  flex-shrink: 0;
 }
 
-.page-header .title { color: #f8fafc; font-weight: 600; font-size: 20px; letter-spacing: 1px; }
+.page-header .title {
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
 
 .close-btn {
-  background: transparent; border: 1px solid #475569; border-radius: 4px;
-  color: #94a3b8; padding: 6px 12px; font-size: 14px; cursor: pointer; transition: all 0.2s;
+  background: transparent;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  color: #94a3b8;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.close-btn:hover { background: #334155; color: #f8fafc; border-color: #f8fafc; }
 
-/* Dashboard 核心布局，关键点：min-height: 0 激活子元素的局部滚动 */
+.close-btn:hover {
+  background: #334155;
+  color: #f8fafc;
+  border-color: #f8fafc;
+}
+
 .dashboard-layout {
   display: flex;
   flex: 1;
   gap: 50px;
   align-items: stretch;
-  min-height: 0; 
+  min-height: 0;
 }
 
-/* -------------------------------------
-   左侧 (红框区)：原生表格布局约束体系 
--------------------------------------- */
 .table-section {
   flex: 1.2;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* 核心：内容超载时生成局部滚动条 */
-  padding-right: 15px; /* 为滚动条预留空间，防止挤压表格内容 */
+  overflow-y: auto;
+  padding-right: 15px;
 }
 
-/* 定制化美化暗黑风格滚动条 (Webkit) */
-.table-section::-webkit-scrollbar { width: 6px; }
-.table-section::-webkit-scrollbar-track { background: transparent; }
-.table-section::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-.table-section::-webkit-scrollbar-thumb:hover { background: #64748b; }
+.table-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.table-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-section::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+.table-section::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
 
 .table-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 50px; 
-  padding-bottom: 30px; /* 触底预留呼吸空间 */
+  gap: 50px;
+  padding-bottom: 30px;
 }
 
-.native-table-container { width: 100%; }
+.native-table-container {
+  width: 100%;
+  transition: background-color 0.3s;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+/* 增加鼠标悬浮高亮反馈以明示交互区域 */
+.native-table-container:hover {
+  background-color: rgba(51, 65, 85, 0.4);
+  cursor: default;
+}
 
 .table-title {
   text-align: center;
-  color: #f8fafc; /* 适配暗黑背景的亮色标题 */
+  color: #f8fafc;
   font-size: 18px;
   font-weight: bold;
   margin: 0 0 15px 0;
   letter-spacing: 1px;
 }
 
-/* 核心原生表格样式：暗黑风格重构 */
 .native-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  background-color: transparent; /* 移除白底，继承大背景色 */
+  background-color: transparent;
 }
 
 .native-table th,
 .native-table td {
-  border: 1px solid #475569; /* 使用柔和的灰色边框替代纯黑 */
+  border: 1px solid #475569;
   text-align: center;
   vertical-align: middle;
   padding: 14px 8px;
   font-size: 14px;
 }
 
-.native-table th { 
-  background-color: #1a202c; /* 加深表头背景区分层级 */
-  color: #f8fafc; 
-  font-weight: bold; 
+.native-table th {
+  background-color: #1a202c;
+  color: #f8fafc;
+  font-weight: bold;
 }
 
-.native-table td { 
-  background-color: transparent; 
-  color: #e2e8f0; /* 数据内容使用亮灰色提升辨识度 */
+.native-table td {
+  background-color: transparent;
+  color: #e2e8f0;
 }
 
-/* 表格内部特殊行（如季度统计） */
 .native-table tbody th {
   background-color: #2d3748;
   color: #f1f5f9;
 }
 
-/* -------------------------------------
-   右侧 (黄框区)：图表布局约束体系
--------------------------------------- */
 .chart-section {
   flex: 1;
-  /* 右侧无需滚动，始终固定占满高度 */
   display: flex;
   flex-direction: column;
 }

@@ -21,18 +21,21 @@
   </div>
 
   <!-- 沉浸式全屏视图组件挂载点 -->
-  <PerformanceReport v-if="showReport" :raw-data="reportData" @close="showReport = false" />
+  <PerformanceReport v-if="showReport" :raw-data="reportData" :component-data="reportComponentData"
+    @close="showReport = false" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { factoryService } from '../services/FactoryService.ts';
+import { factoryService } from '../services/FactoryService';
+import { componentService } from '../services/ComponentService';
 import PerformanceReport from './components/PerformanceReport.vue';
 
 const isExpanded = ref(false);
 const isLoading = ref(false);
 const showReport = ref(false);
 const reportData = ref<any[]>([]);
+const reportComponentData = ref<any>(null);
 
 const togglePanel = () => {
   isExpanded.value = !isExpanded.value;
@@ -41,16 +44,22 @@ const togglePanel = () => {
 const handleOpenReport = async () => {
   isLoading.value = true;
   try {
-    const res = await factoryService.fetchMonthlyOutput();
-    if (res && res.StatusCode === 200 && res.IsSucceed && res.Data) {
-      reportData.value = res.Data;
-      showReport.value = true;   // 开启全屏面板
-      isExpanded.value = false;  // 收起侧边栏
+    // 实施双向并行请求，赋予深化服务以独立的熔断机制（返回null不阻断主链路）
+    const [factoryRes, compRes] = await Promise.all([
+      factoryService.fetchMonthlyOutput().catch(() => null),
+      componentService.getYearWeight().catch(() => null)
+    ]);
+
+    if (factoryRes && factoryRes.StatusCode === 200 && factoryRes.IsSucceed && factoryRes.Data) {
+      reportData.value = factoryRes.Data;
+      reportComponentData.value = compRes;
+      showReport.value = true;
+      isExpanded.value = false;
     } else {
-      alert('接口返回异常或无数据');
+      alert('核心工厂数据接口返回异常或无数据');
     }
   } catch (error) {
-    alert('网络请求失败');
+    alert('网络请求彻底熔断');
   } finally {
     isLoading.value = false;
   }
@@ -58,6 +67,7 @@ const handleOpenReport = async () => {
 </script>
 
 <style scoped>
+/* 延续原有样式配置，未做删改 */
 .hhjgbim-sidebar {
   position: fixed;
   top: 50%;
