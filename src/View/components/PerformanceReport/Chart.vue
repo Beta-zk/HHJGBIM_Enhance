@@ -6,6 +6,10 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * @module BaseChartRenderer
+ * @description ECharts 渲染器封装组件。管控画布实例生命周期，基于 Props 的响应式变更自动实施重绘。
+ */
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import * as echarts from 'echarts';
 
@@ -29,6 +33,11 @@ const quarterChartRef = ref<HTMLDivElement | null>(null);
 let monthChartInstance: echarts.ECharts | null = null;
 let quarterChartInstance: echarts.ECharts | null = null;
 
+/**
+ * @method initCharts
+ * @description 图表状态机构造器。注入主题配置及硬编码网格间距，初始化或全量刷新折线画布。
+ * @returns {void}
+ */
 const initCharts = () => {
     if (!monthChartInstance && monthChartRef.value) {
         monthChartInstance = echarts.init(monthChartRef.value);
@@ -40,7 +49,6 @@ const initCharts = () => {
     const commonGrid = { left: '3%', right: '3%', bottom: '5%', top: '20%', containLabel: true };
     const commonYAxis = { type: 'value', splitLine: { lineStyle: { color: '#334155', type: 'dashed' } }, axisLabel: { color: '#94a3b8' } };
 
-    // 【修正点】：关闭 smooth 属性，使用直线连接
     monthChartInstance?.setOption({
         title: { text: props.config.monthTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
         tooltip: { trigger: 'axis' },
@@ -56,7 +64,6 @@ const initCharts = () => {
     }, true);
 
     if (props.activeType === 'factory') {
-        // 【修正点】：工厂季度产量关闭 smooth 属性
         quarterChartInstance?.setOption({
             title: { text: props.config.quarterTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
             tooltip: { trigger: 'axis' },
@@ -71,7 +78,6 @@ const initCharts = () => {
             }]
         }, true);
     } else {
-        // 【修正点】：个人深化趋势同步关闭 smooth 属性，保持 UI 统一
         const personList = props.personnelMatrix?.list || [];
         const seriesData = personList.map((p: any) => ({
             name: p.name,
@@ -119,7 +125,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 继承 Chart.vue 原有样式 */
 .chart-container {
     display: flex;
     flex-direction: column;

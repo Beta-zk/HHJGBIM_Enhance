@@ -10,7 +10,6 @@
         <div class="table-section">
           <div class="table-wrapper">
 
-            <!-- 报表一：工厂产量 -->
             <div class="native-table-container" @mouseenter="activeChartType = 'factory'">
               <h3 class="table-title">工厂产量(t)</h3>
               <table class="native-table">
@@ -39,7 +38,6 @@
               </table>
             </div>
 
-            <!-- 报表二：深化重量 -->
             <div class="native-table-container" @mouseenter="activeChartType = 'component'">
               <h3 class="table-title">深化重量(t)</h3>
               <table class="native-table">
@@ -52,8 +50,6 @@
                   <tr>
                     <td v-for="(v, index) in compMonthValues" :key="'weight-v-' + index">{{ v }}</td>
                   </tr>
-
-                  <!-- 【修正点】：剥离辅助说明文字，直接渲染月份变量 -->
                   <tr>
                     <th colspan="4">姓名</th>
                     <th colspan="4">{{ personnelMatrix.prevMonth }}</th>
@@ -85,6 +81,10 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * @module PerformanceReport
+ * @description 报表视图渲染器。接收顶层下发的聚合载荷，并实施指标矩阵的横纵拆解与视图绑定。
+ */
 import { ref, computed, onMounted, nextTick } from 'vue';
 import Chart from './PerformanceReport/Chart.vue';
 
@@ -127,6 +127,11 @@ onMounted(async () => {
   processData();
 });
 
+/**
+ * @method processData
+ * @description 报表数据预处理器。将泛用 JSON 节点扁平化映射至一维坐标轴矩阵，确保图表库能够稳定渲染。
+ * @returns {void}
+ */
 const processData = () => {
   const tempMonthNames: string[] = [];
   const tempFactoryMonths: number[] = [];
@@ -169,7 +174,6 @@ const processData = () => {
 </script>
 
 <style scoped>
-/* 延续之前 PerformanceReport.vue 的样式，保持不变 */
 .fullscreen-report-overlay {
   position: fixed;
   top: 0;

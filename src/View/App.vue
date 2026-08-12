@@ -27,6 +27,10 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * @module AppRoot
+ * @description 顶层视图控制器。协调侧边栏动画状态，并作为中心枢纽向下级图表与设置组件下发 Props。
+ */
 import { ref } from 'vue';
 import { factoryService } from '../services/FactoryService';
 import { componentService } from '../services/ComponentService';
@@ -45,6 +49,11 @@ const personnelReportData = ref<any>({ currMonth: '', prevMonth: '', list: [] })
 
 const togglePanel = () => { isExpanded.value = !isExpanded.value; };
 
+/**
+ * @method handleOpenReport
+ * @description 异步聚合工厂产量与深化组件权重数据，实施多接口并发请求与异常熔断保护。
+ * @returns {Promise<void>}
+ */
 const handleOpenReport = async () => {
   isLoading.value = true;
   try {
@@ -70,7 +79,6 @@ const handleOpenReport = async () => {
         componentService.getMonthWeight(prevMonthStr, person).catch(() => null)
       ]);
 
-      // 【修正点】：加入 /1000 换算，并严格控制保留三位小数后转回 Number
       extractedPersonnelData.push({
         name: person,
         currWeight: Number(((currData?.GrossTotal || 0) / 1000).toFixed(3)),
@@ -100,7 +108,6 @@ const handleOpenReport = async () => {
 </script>
 
 <style scoped>
-/* 延续之前 App.vue 的样式，保持不变 */
 .hhjgbim-sidebar {
   position: fixed;
   top: 50%;
