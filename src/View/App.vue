@@ -21,7 +21,7 @@
   </div>
 
   <PerformanceReport v-if="showReport" :raw-data="reportData" :component-data="reportComponentData"
-    :personnel-matrix="personnelReportData" @close="showReport = false" />
+    :personnel-matrix="personnelReportData" :crawl-date="reportCrawlDate" @close="showReport = false" />
 
   <Settings v-if="showSettings" @close="showSettings = false" />
 </template>
@@ -34,6 +34,7 @@
 import { ref } from 'vue';
 import { factoryService } from '../services/FactoryService';
 import { componentService } from '../services/ComponentService';
+import { systemService } from '../services/SystemService';
 import { settings } from '../config/settings';
 import PerformanceReport from './components/PerformanceReport.vue';
 import Settings from './components/Settings.vue';
@@ -44,14 +45,29 @@ const showReport = ref(false);
 const showSettings = ref(false);
 const reportData = ref<any[]>([]);
 const reportComponentData = ref<any>(null);
+const reportCrawlDate = ref<string>('');
 
 const personnelReportData = ref<any>({ currMonth: '', prevMonth: '', list: [] });
 
 const togglePanel = () => { isExpanded.value = !isExpanded.value; };
 
 /**
+ * @method formatDateTime
+ * @description 时间清洗器。将非标准的 ISO 串清洗为严格的年-月-日 时-分-秒格式。
+ * @param {string} isoStr 原始时间戳
+ * @returns {string} 标准化输出
+ */
+const formatDateTime = (isoStr: string): string => {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+
+/**
  * @method handleOpenReport
- * @description 异步聚合工厂产量与深化组件权重数据，实施多接口并发请求与异常熔断保护。
+ * @description 异步聚合工厂产量、深化组件权重数据及底层系统报告快照，实施多接口并发请求与异常熔断保护。
  * @returns {Promise<void>}
  */
 const handleOpenReport = async () => {
@@ -67,9 +83,10 @@ const handleOpenReport = async () => {
       ? userConfig.deepeningPersonnel.split(',').map((s: string) => s.trim()).filter(Boolean)
       : [];
 
-    const [factoryRes, compRes] = await Promise.all([
+    const [factoryRes, compRes, sysReportRes] = await Promise.all([
       factoryService.fetchMonthlyOutput().catch(() => null),
-      componentService.getYearWeight().catch(() => null)
+      componentService.getYearWeight().catch(() => null),
+      systemService.submitSystemReport().catch(() => null)
     ]);
 
     const extractedPersonnelData = [];
@@ -89,6 +106,19 @@ const handleOpenReport = async () => {
     if (factoryRes && factoryRes.StatusCode === 200 && factoryRes.IsSucceed && factoryRes.Data) {
       reportData.value = factoryRes.Data;
       reportComponentData.value = compRes;
+
+      // 仅提取目标时间特征，兼容嵌套结构与帕斯卡/小写命名差异，丢弃其余报告数据
+      let extractedDate = '';
+      if (sysReportRes) {
+        const sysDataObj = sysReportRes.data || sysReportRes.Data || sysReportRes;
+        if (sysDataObj.CrawlDate) {
+          extractedDate = sysDataObj.CrawlDate;
+        } else if (sysDataObj.crawl_date) {
+          extractedDate = sysDataObj.crawl_date;
+        }
+      }
+      reportCrawlDate.value = formatDateTime(extractedDate);
+
       personnelReportData.value = {
         currMonth: currMonthStr,
         prevMonth: prevMonthStr,
@@ -108,6 +138,7 @@ const handleOpenReport = async () => {
 </script>
 
 <style scoped>
+/* 保持原有样式，未变更 */
 .hhjgbim-sidebar {
   position: fixed;
   top: 50%;

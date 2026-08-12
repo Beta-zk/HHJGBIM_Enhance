@@ -3,7 +3,10 @@
     <div class="report-page-container">
       <div class="page-header">
         <span class="title">绩效考核统计视窗</span>
-        <button class="close-btn" @click="$emit('close')">✖ 关闭</button>
+        <div class="header-right">
+          <span v-if="crawlDate" class="crawl-date">抓取快照: {{ crawlDate }}</span>
+          <button class="close-btn" @click="$emit('close')">✖ 关闭</button>
+        </div>
       </div>
 
       <div class="dashboard-layout">
@@ -51,7 +54,10 @@
                     <td v-for="(v, index) in compMonthValues" :key="'weight-v-' + index">{{ v }}</td>
                   </tr>
                   <tr>
-                    <th colspan="4">姓名</th>
+                    <th colspan="4" class="diagonal-cell">
+                      <span class="top-right">时间</span>
+                      <span class="bottom-left">姓名</span>
+                    </th>
                     <th colspan="4">{{ personnelMatrix.prevMonth }}</th>
                     <th colspan="4">{{ personnelMatrix.currMonth }}</th>
                   </tr>
@@ -83,7 +89,7 @@
 <script setup lang="ts">
 /**
  * @module PerformanceReport
- * @description 报表视图渲染器。接收顶层下发的聚合载荷，并实施指标矩阵的横纵拆解与视图绑定。
+ * @description 报表视图渲染器。接收顶层下发的聚合载荷，并在 Header 展示爬虫快照时间。
  */
 import { ref, computed, onMounted, nextTick } from 'vue';
 import Chart from './PerformanceReport/Chart.vue';
@@ -92,6 +98,7 @@ const props = defineProps<{
   rawData: any[];
   componentData: any;
   personnelMatrix: any;
+  crawlDate?: string;
 }>();
 
 const monthNames = ref<string[]>([]);
@@ -212,6 +219,22 @@ const processData = () => {
   letter-spacing: 1px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.crawl-date {
+  color: #94a3b8;
+  font-size: 13px;
+  background: rgba(51, 65, 85, 0.4);
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px dashed #475569;
+  letter-spacing: 0.5px;
+}
+
 .close-btn {
   background: transparent;
   border: 1px solid #475569;
@@ -326,5 +349,30 @@ const processData = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.diagonal-cell {
+  position: relative;
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cline x1='0' y1='0' x2='100%25' y2='100%25' stroke='%23475569' stroke-width='1'/%3E%3C/svg%3E") no-repeat center center;
+  background-size: 100% 100%;
+  height: 50px;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+.diagonal-cell .top-right {
+  position: absolute;
+  top: 8px;
+  right: 15px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.diagonal-cell .bottom-left {
+  position: absolute;
+  bottom: 8px;
+  left: 15px;
+  font-size: 14px;
+  font-weight: bold;
 }
 </style>
