@@ -10,7 +10,6 @@
         <button class="action-btn" @click="handleOpenReport" :disabled="isLoading">
           {{ isLoading ? '⏳ 数据拉取中...' : '📊 打开绩效统计表' }}
         </button>
-        <!-- 新增设置入口 -->
         <button class="action-btn" @click="showSettings = true">
           ⚙️ 偏好设置
         </button>
@@ -21,11 +20,9 @@
     </div>
   </div>
 
-  <!-- 沉浸式全屏视图组件挂载点 -->
   <PerformanceReport v-if="showReport" :raw-data="reportData" :component-data="reportComponentData"
-    @close="showReport = false" />
+    :personnel-matrix="personnelReportData" @close="showReport = false" />
 
-  <!-- 配置面板挂载点 -->
   <Settings v-if="showSettings" @close="showSettings = false" />
 </template>
 
@@ -33,31 +30,62 @@
 import { ref } from 'vue';
 import { factoryService } from '../services/FactoryService';
 import { componentService } from '../services/ComponentService';
+import { settings } from '../config/settings';
 import PerformanceReport from './components/PerformanceReport.vue';
-import Settings from './components/Settings.vue'; // 引入设置组件
+import Settings from './components/Settings.vue';
 
 const isExpanded = ref(false);
 const isLoading = ref(false);
 const showReport = ref(false);
-const showSettings = ref(false); // 控制面板显隐
+const showSettings = ref(false);
 const reportData = ref<any[]>([]);
 const reportComponentData = ref<any>(null);
 
-const togglePanel = () => {
-  isExpanded.value = !isExpanded.value;
-};
+const personnelReportData = ref<any>({ currMonth: '', prevMonth: '', list: [] });
+
+const togglePanel = () => { isExpanded.value = !isExpanded.value; };
 
 const handleOpenReport = async () => {
   isLoading.value = true;
   try {
+    const now = new Date();
+    const currMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+    const userConfig = settings.get() as any;
+    const personnelList = userConfig.deepeningPersonnel
+      ? userConfig.deepeningPersonnel.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : [];
+
     const [factoryRes, compRes] = await Promise.all([
       factoryService.fetchMonthlyOutput().catch(() => null),
       componentService.getYearWeight().catch(() => null)
     ]);
 
+    const extractedPersonnelData = [];
+    for (const person of personnelList) {
+      const [currData, prevData] = await Promise.all([
+        componentService.getMonthWeight(currMonthStr, person).catch(() => null),
+        componentService.getMonthWeight(prevMonthStr, person).catch(() => null)
+      ]);
+
+      // 【修正点】：加入 /1000 换算，并严格控制保留三位小数后转回 Number
+      extractedPersonnelData.push({
+        name: person,
+        currWeight: Number(((currData?.GrossTotal || 0) / 1000).toFixed(3)),
+        prevWeight: Number(((prevData?.GrossTotal || 0) / 1000).toFixed(3))
+      });
+    }
+
     if (factoryRes && factoryRes.StatusCode === 200 && factoryRes.IsSucceed && factoryRes.Data) {
       reportData.value = factoryRes.Data;
       reportComponentData.value = compRes;
+      personnelReportData.value = {
+        currMonth: currMonthStr,
+        prevMonth: prevMonthStr,
+        list: extractedPersonnelData
+      };
       showReport.value = true;
       isExpanded.value = false;
     } else {
@@ -72,7 +100,7 @@ const handleOpenReport = async () => {
 </script>
 
 <style scoped>
-/* 延续原有样式配置，未做删改 */
+/* 延续之前 App.vue 的样式，保持不变 */
 .hhjgbim-sidebar {
   position: fixed;
   top: 50%;

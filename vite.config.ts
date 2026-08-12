@@ -17,6 +17,7 @@ export default defineConfig({
         connect: [
           "integ-plat-proj-api.bimtk.com",
           "integ-plat-produce-api.bimtk.com",
+          "127.0.0.1"
         ],
         "run-at": "document-start",
       },

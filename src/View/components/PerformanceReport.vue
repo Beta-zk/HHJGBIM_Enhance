@@ -3,17 +3,15 @@
     <div class="report-page-container">
       <div class="page-header">
         <span class="title">绩效考核统计视窗</span>
-        <button class="close-btn" @click="$emit('close')">✖ 关闭视图</button>
+        <button class="close-btn" @click="$emit('close')">✖ 关闭</button>
       </div>
 
       <div class="dashboard-layout">
-        <!-- 左侧：原生 DOM 表格区 -->
         <div class="table-section">
           <div class="table-wrapper">
 
             <!-- 报表一：工厂产量 -->
             <div class="native-table-container" @mouseenter="activeChartType = 'factory'">
-              <!-- 【修改点】：补充 (t) 单位标识 -->
               <h3 class="table-title">工厂产量(t)</h3>
               <table class="native-table">
                 <thead>
@@ -54,17 +52,20 @@
                   <tr>
                     <td v-for="(v, index) in compMonthValues" :key="'weight-v-' + index">{{ v }}</td>
                   </tr>
+
+                  <!-- 【修正点】：剥离辅助说明文字，直接渲染月份变量 -->
                   <tr>
-                    <th colspan="3">第一季度</th>
-                    <th colspan="3">第二季度</th>
-                    <th colspan="3">第三季度</th>
-                    <th colspan="3">第四季度</th>
+                    <th colspan="4">姓名</th>
+                    <th colspan="4">{{ personnelMatrix.prevMonth }}</th>
+                    <th colspan="4">{{ personnelMatrix.currMonth }}</th>
                   </tr>
-                  <tr>
-                    <td colspan="3">{{ compQuarterValues[0] }}</td>
-                    <td colspan="3">{{ compQuarterValues[1] }}</td>
-                    <td colspan="3">{{ compQuarterValues[2] }}</td>
-                    <td colspan="3">{{ compQuarterValues[3] }}</td>
+                  <tr v-for="(person, idx) in personnelMatrix.list" :key="'p-' + idx">
+                    <td colspan="4">{{ person.name }}</td>
+                    <td colspan="4">{{ person.prevWeight }}</td>
+                    <td colspan="4">{{ person.currWeight }}</td>
+                  </tr>
+                  <tr v-if="personnelMatrix.list.length === 0">
+                    <td colspan="12" style="color: #64748b; font-style: italic;">暂未在偏好设置中配置深化人员名单...</td>
                   </tr>
                 </tbody>
               </table>
@@ -73,10 +74,10 @@
           </div>
         </div>
 
-        <!-- 右侧：动态图表组件区 -->
         <div class="chart-section">
-          <Chart :month-names="monthNames" :month-values="currentChartMonthValues"
-            :quarter-values="currentChartQuarterValues" :config="currentChartConfig" />
+          <Chart :active-type="activeChartType" :month-names="monthNames" :month-values="currentChartMonthValues"
+            :quarter-values="currentChartQuarterValues" :personnel-matrix="personnelMatrix"
+            :config="currentChartConfig" />
         </div>
       </div>
     </div>
@@ -90,6 +91,7 @@ import Chart from './PerformanceReport/Chart.vue';
 const props = defineProps<{
   rawData: any[];
   componentData: any;
+  personnelMatrix: any;
 }>();
 
 const monthNames = ref<string[]>([]);
@@ -110,19 +112,8 @@ const currentChartQuarterValues = computed(() => {
 
 const currentChartConfig = computed(() => {
   return activeChartType.value === 'factory'
-    ? {
-      // 【修改点】：图表标题同步补充单位
-      monthTitle: '月度产量(t)',
-      quarterTitle: '季度产量(t)',
-      monthColor: '#38bdf8',
-      quarterColor: '#10b981'
-    }
-    : {
-      monthTitle: '月度深化重量(t)',
-      quarterTitle: '季度深化重量(t)',
-      monthColor: '#8b5cf6',
-      quarterColor: '#f59e0b'
-    };
+    ? { monthTitle: '月度产量(t)', quarterTitle: '季度产量(t)', monthColor: '#38bdf8', quarterColor: '#10b981' }
+    : { monthTitle: '月度深化重量(t)', quarterTitle: '人员深化对比(t)', monthColor: '#8b5cf6', quarterColor: '#f59e0b' };
 });
 
 const monthMap: Record<string, string> = {
@@ -165,7 +156,6 @@ const processData = () => {
       if (parts && parts.length === 2) {
         const mIdx = parseInt(parts[1], 10) - 1;
         const val = (item.GrossTotal || 0) / 1000;
-
         if (mIdx >= 0 && mIdx < 12) {
           tempCompMonths[mIdx] = val;
           tempCompQuarters[Math.floor(mIdx / 3)] += val;
@@ -173,13 +163,13 @@ const processData = () => {
       }
     });
   }
-  // 【修改点】：由 2 统一调整为 3 位有效小数
   compMonthValues.value = tempCompMonths.map(v => Number(v.toFixed(3)));
   compQuarterValues.value = tempCompQuarters.map(v => Number(v.toFixed(3)));
 };
 </script>
 
 <style scoped>
+/* 延续之前 PerformanceReport.vue 的样式，保持不变 */
 .fullscreen-report-overlay {
   position: fixed;
   top: 0;
@@ -243,7 +233,6 @@ const processData = () => {
   min-height: 0;
 }
 
-/* 【修改点】：将原先的 1.2 提升至 1.5，释放更宽的表格横向占比 */
 .table-section {
   flex: 1.5;
   display: flex;

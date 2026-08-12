@@ -15,7 +15,10 @@ export const API_URLS = {
     LOCAL_PROJECT_INFO_PATH: '/project/info',
     LOCAL_COMPONENT_WEIGHT_PATH: '/component/yearWeight',
     
-    // [新增] 爬虫系统级探针与初始化路由
+    // [新增] 构件月度权重数据查询路由
+    LOCAL_COMPONENT_MONTH_WEIGHT_PATH: '/component/monthWeight',
+    
+    // 爬虫系统级探针与初始化路由
     LOCAL_SYSTEM_PING_PATH: '/system/ping',
     LOCAL_SYSTEM_INT_PATH: '/system/int'
 };

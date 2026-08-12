@@ -30,6 +30,40 @@ class ComponentService {
         console.log('[HHJGBIM_Enhance] 构件权重分配获取成功');
         return response;
     }
+
+    /**
+     * @method getMonthWeight
+     * @description 获取指定月份与创建人的构件权重分配数据。
+     * @param {string} [month] 可选，目标月份 (YYYY-MM)，缺省由服务端回落为当前月
+     * @param {string} [createUser] 可选，按组件创建人姓名精确过滤
+     * @returns {Promise<any>} 返回月度数据结构的 JSON 对象
+     */
+    public async getMonthWeight(month?: string, createUser?: string): Promise<any> {
+        await authService.waitForToken();
+        
+        let url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_COMPONENT_MONTH_WEIGHT_PATH}`;
+        
+        // 构建 Query 参数链以兼容后端 FastAPI 的 Query 注入标准
+        const queryParams = new URLSearchParams();
+        if (month) queryParams.append('month', month);
+        if (createUser) queryParams.append('createUser', createUser);
+        
+        const queryString = queryParams.toString();
+        if (queryString) {
+            url += `?${queryString}`;
+        }
+        
+        // 发起跨域 POST 提权请求 (Body 维持空载荷)
+        const response = await GMHttpClient.post(url, {});
+        
+        if (!response) {
+            console.warn('[HHJGBIM_Enhance] 构件月度权重服务响应异常');
+            return null;
+        }
+        
+        console.log('[HHJGBIM_Enhance] 构件月度权重分配获取成功');
+        return response;
+    }
 }
 
 export const componentService = new ComponentService();
