@@ -1,6 +1,7 @@
 import { API_URLS } from '../config/constants';
 import { GMHttpClient } from '../core/GMHttpClient';
 import { authService } from './AuthService';
+import { settings } from '../config/settings';
 
 /**
  * @class ComponentService
@@ -16,7 +17,10 @@ class ComponentService {
      */
     public async getYearWeight(params: Record<string, any> = {}): Promise<any> {
         await authService.waitForToken();
-        const response = await GMHttpClient.post(API_URLS.LOCAL_COMPONENT_WEIGHT, params);
+        
+        // 动态组装完整 URL
+        const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_COMPONENT_WEIGHT_PATH}`;
+        const response = await GMHttpClient.post(url, params);
         
         if (!response) {
             console.warn('[HHJGBIM_Enhance] 构件权重服务响应异常');

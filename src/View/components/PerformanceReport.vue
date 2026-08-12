@@ -13,7 +13,8 @@
 
             <!-- 报表一：工厂产量 -->
             <div class="native-table-container" @mouseenter="activeChartType = 'factory'">
-              <h3 class="table-title">工厂产量</h3>
+              <!-- 【修改点】：补充 (t) 单位标识 -->
+              <h3 class="table-title">工厂产量(t)</h3>
               <table class="native-table">
                 <thead>
                   <tr>
@@ -42,7 +43,7 @@
 
             <!-- 报表二：深化重量 -->
             <div class="native-table-container" @mouseenter="activeChartType = 'component'">
-              <h3 class="table-title">深化重量</h3>
+              <h3 class="table-title">深化重量(t)</h3>
               <table class="native-table">
                 <thead>
                   <tr>
@@ -74,9 +75,8 @@
 
         <!-- 右侧：动态图表组件区 -->
         <div class="chart-section">
-          <!-- 核心交互：通过 computed 计算属性驱动图表动态卸载与挂载 -->
-          <component :is="activeChartComponent" :month-names="monthNames" :month-values="currentChartMonthValues"
-            :quarter-values="currentChartQuarterValues" />
+          <Chart :month-names="monthNames" :month-values="currentChartMonthValues"
+            :quarter-values="currentChartQuarterValues" :config="currentChartConfig" />
         </div>
       </div>
     </div>
@@ -85,40 +85,44 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
-import FactoryOutputChart from './PerformanceReport/FactoryOutputChart.vue';
-import ComponentWeightChart from './PerformanceReport/ComponentWeightChart.vue';
+import Chart from './PerformanceReport/Chart.vue';
 
 const props = defineProps<{
   rawData: any[];
   componentData: any;
 }>();
 
-// --- 基础数据结构 ---
 const monthNames = ref<string[]>([]);
-
-// 工厂数据视图模型
 const factoryMonthValues = ref<number[]>([]);
 const factoryQuarterValues = ref<number[]>([]);
-
-// 深化重量视图模型
 const compMonthValues = ref<number[]>(new Array(12).fill(0));
 const compQuarterValues = ref<number[]>([0, 0, 0, 0]);
 
-// --- 交互控制体系 ---
 const activeChartType = ref<'factory' | 'component'>('factory');
 
-// 根据悬浮态动态映射依赖的图表组件
-const activeChartComponent = computed(() => {
-  return activeChartType.value === 'factory' ? FactoryOutputChart : ComponentWeightChart;
-});
-
-// 根据悬浮态动态派发数据层 Props
 const currentChartMonthValues = computed(() => {
   return activeChartType.value === 'factory' ? factoryMonthValues.value : compMonthValues.value;
 });
 
 const currentChartQuarterValues = computed(() => {
   return activeChartType.value === 'factory' ? factoryQuarterValues.value : compQuarterValues.value;
+});
+
+const currentChartConfig = computed(() => {
+  return activeChartType.value === 'factory'
+    ? {
+      // 【修改点】：图表标题同步补充单位
+      monthTitle: '月度产量(t)',
+      quarterTitle: '季度产量(t)',
+      monthColor: '#38bdf8',
+      quarterColor: '#10b981'
+    }
+    : {
+      monthTitle: '月度深化重量(t)',
+      quarterTitle: '季度深化重量(t)',
+      monthColor: '#8b5cf6',
+      quarterColor: '#f59e0b'
+    };
 });
 
 const monthMap: Record<string, string> = {
@@ -133,7 +137,6 @@ onMounted(async () => {
 });
 
 const processData = () => {
-  // 1. 处理主链路：工厂产量数据
   const tempMonthNames: string[] = [];
   const tempFactoryMonths: number[] = [];
   const tempFactoryQuarters = [0, 0, 0, 0];
@@ -141,10 +144,8 @@ const processData = () => {
   props.rawData.forEach(item => {
     const val = item.Value || 0;
     const monthInt = parseInt(item.Name, 10);
-
     tempMonthNames.push(monthMap[item.Name] || `${item.Name}月`);
     tempFactoryMonths.push(val);
-
     if (monthInt >= 1 && monthInt <= 3) tempFactoryQuarters[0] += val;
     else if (monthInt >= 4 && monthInt <= 6) tempFactoryQuarters[1] += val;
     else if (monthInt >= 7 && monthInt <= 9) tempFactoryQuarters[2] += val;
@@ -155,34 +156,30 @@ const processData = () => {
   factoryMonthValues.value = tempFactoryMonths;
   factoryQuarterValues.value = tempFactoryQuarters.map(v => Number(v.toFixed(3)));
 
-  // 2. 处理副链路：本地深化重量数据。缺失时静默降级为全零。
   const tempCompMonths = new Array(12).fill(0);
   const tempCompQuarters = [0, 0, 0, 0];
 
   if (props.componentData && props.componentData.Data && Array.isArray(props.componentData.Data)) {
     props.componentData.Data.forEach((item: any) => {
-      // 兼容 YYYY-MM 的切片提取逻辑
       const parts = item.Month?.split('-');
       if (parts && parts.length === 2) {
         const mIdx = parseInt(parts[1], 10) - 1;
-        const val = item.GrossTotal || 0;
+        const val = (item.GrossTotal || 0) / 1000;
 
         if (mIdx >= 0 && mIdx < 12) {
           tempCompMonths[mIdx] = val;
-          const qIdx = Math.floor(mIdx / 3);
-          tempCompQuarters[qIdx] += val;
+          tempCompQuarters[Math.floor(mIdx / 3)] += val;
         }
       }
     });
   }
-
+  // 【修改点】：由 2 统一调整为 3 位有效小数
   compMonthValues.value = tempCompMonths.map(v => Number(v.toFixed(3)));
   compQuarterValues.value = tempCompQuarters.map(v => Number(v.toFixed(3)));
 };
 </script>
 
 <style scoped>
-/* 延续原有样式配置，未做删改 */
 .fullscreen-report-overlay {
   position: fixed;
   top: 0;
@@ -246,8 +243,9 @@ const processData = () => {
   min-height: 0;
 }
 
+/* 【修改点】：将原先的 1.2 提升至 1.5，释放更宽的表格横向占比 */
 .table-section {
-  flex: 1.2;
+  flex: 1.5;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -285,7 +283,6 @@ const processData = () => {
   border-radius: 8px;
 }
 
-/* 增加鼠标悬浮高亮反馈以明示交互区域 */
 .native-table-container:hover {
   background-color: rgba(51, 65, 85, 0.4);
   cursor: default;

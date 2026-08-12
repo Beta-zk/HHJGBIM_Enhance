@@ -1,6 +1,7 @@
 import { API_URLS } from '../config/constants';
 import { GMHttpClient } from '../core/GMHttpClient';
 import { authService } from './AuthService';
+import { settings } from '../config/settings';
 
 /**
  * @class ProjectService
@@ -61,7 +62,7 @@ class ProjectService {
 
     /**
      * @method fetchLocalInfo
-     * @description 向本地环境下发探测请求。
+     * @description 向本地环境下发探测请求。采用动态配置的爬虫域名寻址。
      * @param {number} timeoutMs 熔断阈值（毫秒）
      * @returns {Promise<any>}
      * @private
@@ -72,7 +73,10 @@ class ProjectService {
                 resolve(null);
             }, timeoutMs);
 
-            GMHttpClient.post(API_URLS.LOCAL_PROJECT_INFO, {}).then(res => {
+            // 动态组装完整 URL
+            const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_PROJECT_INFO_PATH}`;
+
+            GMHttpClient.post(url, {}).then(res => {
                 clearTimeout(timer);
                 resolve(res);
             }).catch(() => {

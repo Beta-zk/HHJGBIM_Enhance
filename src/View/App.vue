@@ -10,8 +10,9 @@
         <button class="action-btn" @click="handleOpenReport" :disabled="isLoading">
           {{ isLoading ? '⏳ 数据拉取中...' : '📊 打开绩效统计表' }}
         </button>
-        <button class="action-btn placeholder" disabled>
-          🚧 预留功能模块
+        <!-- 新增设置入口 -->
+        <button class="action-btn" @click="showSettings = true">
+          ⚙️ 偏好设置
         </button>
         <button class="action-btn placeholder" disabled>
           🚧 预留功能模块
@@ -23,6 +24,9 @@
   <!-- 沉浸式全屏视图组件挂载点 -->
   <PerformanceReport v-if="showReport" :raw-data="reportData" :component-data="reportComponentData"
     @close="showReport = false" />
+
+  <!-- 配置面板挂载点 -->
+  <Settings v-if="showSettings" @close="showSettings = false" />
 </template>
 
 <script setup lang="ts">
@@ -30,10 +34,12 @@ import { ref } from 'vue';
 import { factoryService } from '../services/FactoryService';
 import { componentService } from '../services/ComponentService';
 import PerformanceReport from './components/PerformanceReport.vue';
+import Settings from './components/Settings.vue'; // 引入设置组件
 
 const isExpanded = ref(false);
 const isLoading = ref(false);
 const showReport = ref(false);
+const showSettings = ref(false); // 控制面板显隐
 const reportData = ref<any[]>([]);
 const reportComponentData = ref<any>(null);
 
@@ -44,7 +50,6 @@ const togglePanel = () => {
 const handleOpenReport = async () => {
   isLoading.value = true;
   try {
-    // 实施双向并行请求，赋予深化服务以独立的熔断机制（返回null不阻断主链路）
     const [factoryRes, compRes] = await Promise.all([
       factoryService.fetchMonthlyOutput().catch(() => null),
       componentService.getYearWeight().catch(() => null)
