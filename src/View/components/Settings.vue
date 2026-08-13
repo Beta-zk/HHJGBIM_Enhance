@@ -3,14 +3,14 @@
         <div class="settings-container">
             <div class="settings-header">
                 <span class="title">偏好设置中心</span>
-                <button class="close-btn" @click="handleClose">✖ 放弃并关闭</button>
+                <button class="close-btn" @click="handleClose">放弃更改并关闭</button>
             </div>
 
             <div class="settings-body">
                 <div class="setting-item">
                     <div class="item-info">
                         <h4 class="item-title">生产集成大屏增强</h4>
-                        <p class="item-desc">开启后将物理劫持大屏 DOM，允许点击指标直接无缝跳转至对应的系统二级页面。</p>
+                        <p class="item-desc">允许点击指标直接无缝跳转至对应的系统二级页面。</p>
                     </div>
                     <label class="switch">
                         <input type="checkbox" v-model="formState.enableProductionBigScreen">
@@ -20,8 +20,8 @@
 
                 <div class="setting-item">
                     <div class="item-info">
-                        <h4 class="item-title">仓储项目数据清洗增强</h4>
-                        <p class="item-desc">挂载底层网络监听，智能关联 PLM 字典，补全残缺的仓储项目状态映射关系。</p>
+                        <h4 class="item-title">项目库存统计状态增强</h4>
+                        <p class="item-desc">为新增的一列状态提供数据信息。</p>
                     </div>
                     <label class="switch">
                         <input type="checkbox" v-model="formState.enableProjectInventory">
@@ -42,8 +42,8 @@
 
                 <div class="setting-item">
                     <div class="item-info">
-                        <h4 class="item-title">本地辅助爬虫服务寻址</h4>
-                        <p class="item-desc">配置外部桥接 API 的基准网关域名，支持连通性自检与远程同步控制。</p>
+                        <h4 class="item-title">本地辅助爬虫服务地址</h4>
+                        <p class="item-desc">配置后才可使用爬虫服务。</p>
                     </div>
                     <div class="crawler-input-group">
                         <span class="ping-indicator"
@@ -61,12 +61,12 @@
                 </div>
 
                 <div class="tip-box">
-                    ℹ️ 提示：修改配置后，需点击“保存配置并应用”持久化。
+                    提示：修改配置后，需点击“保存配置并应用”持久化。
                 </div>
             </div>
 
             <div class="settings-footer">
-                <button class="save-btn" @click="handleSave">💾 保存配置并应用</button>
+                <button class="save-btn" @click="handleSave">保存并应用</button>
             </div>
         </div>
     </div>

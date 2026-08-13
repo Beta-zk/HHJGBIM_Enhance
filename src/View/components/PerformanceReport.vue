@@ -4,8 +4,8 @@
       <div class="page-header">
         <span class="title">绩效考核统计视窗</span>
         <div class="header-right">
-          <span v-if="crawlDate" class="crawl-date">抓取快照: {{ crawlDate }}</span>
-          <button class="close-btn" @click="$emit('close')">✖ 关闭</button>
+          <span v-if="crawlDate" class="crawl-date">抓取时间: {{ crawlDate }}</span>
+          <button class="close-btn" @click="$emit('close')">关闭</button>
         </div>
       </div>
 
