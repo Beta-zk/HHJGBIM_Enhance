@@ -5,14 +5,14 @@ import { settings } from '../config/settings';
 
 /**
  * @class ComponentService
- * @description 构件域聚合服务。屏蔽底层 HTTP 通信细节，提供面向构件等多维数据的微服务级业务调度接口。
+ * @description 构件数据链路仓。面向本地爬虫微服务提供隔离化的异步调度模型，规避对原始宿主接口的高频访问压力。
  */
 class ComponentService {
     
     /**
      * @method getYearWeight
-     * @description 获取目标构件年度权重聚合分布矩阵。
-     * @param {Record<string, any>} [params] 参数载荷
+     * @description 投递异步查询，获取构件域在全量时间轴下的权重矩阵。
+     * @param {Record<string, any>} [params={}]
      * @returns {Promise<any>}
      */
     public async getYearWeight(params: Record<string, any> = {}): Promise<any> {
@@ -29,9 +29,9 @@ class ComponentService {
 
     /**
      * @method getMonthWeight
-     * @description 按月度与人员下钻查询构件权重视图数据。
-     * @param {string} [month] 目标月份 (YYYY-MM)
-     * @param {string} [createUser] 组件责任人
+     * @description 提供复合维度的检索映射接口，输出构件周期态势。
+     * @param {string} [month] 统计周期 (YYYY-MM)
+     * @param {string} [createUser] 指标执行人
      * @returns {Promise<any>}
      */
     public async getMonthWeight(month?: string, createUser?: string): Promise<any> {

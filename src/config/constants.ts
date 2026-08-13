@@ -1,6 +1,6 @@
 /**
  * @constant API_URLS
- * @description 系统级 API 路由注册表，统一定义宿主服务绝对路径与爬虫微服务相对路径，支撑网络通讯的基准寻址。
+ * @description 系统级路由注册中心。统一管理宿主平台绝对寻址与本地爬虫微服务相对寻址，支撑网络层的流量分发。
  */
 export const API_URLS = {
     LOGIN: 'https://integ-plat-api.bimtk.com/Platform/Login/Login',
@@ -14,5 +14,6 @@ export const API_URLS = {
     LOCAL_COMPONENT_MONTH_WEIGHT_PATH: '/component/monthWeight',
     LOCAL_SYSTEM_PING_PATH: '/system/ping',
     LOCAL_SYSTEM_INT_PATH: '/system/int',
-    LOCAL_SYSTEM_REPORT_PATH: '/system/report' 
+    LOCAL_SYSTEM_REPORT_PATH: '/system/report',
+    LOCAL_FACTORY_YEAR_OUTPUT_PATH: '/factory/yearOutput'
 };

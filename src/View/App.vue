@@ -103,8 +103,23 @@ const handleOpenReport = async () => {
       });
     }
 
-    if (factoryRes && factoryRes.StatusCode === 200 && factoryRes.IsSucceed && factoryRes.Data) {
-      reportData.value = factoryRes.Data;
+    // 增强的数据校验逻辑：兼容云端包装结构与本地爬虫微服务直返结构
+    let validFactoryData = null;
+    if (factoryRes) {
+      if (factoryRes.StatusCode === 200 && factoryRes.IsSucceed && factoryRes.Data) {
+        // 云端宿主接口兜底返回的规范体
+        validFactoryData = factoryRes.Data;
+      } else if (!factoryRes.StatusCode && Array.isArray(factoryRes)) {
+        // 本地爬虫微服务返回的一维纯净数组
+        validFactoryData = factoryRes;
+      } else if (!factoryRes.StatusCode && factoryRes.Data && Array.isArray(factoryRes.Data)) {
+        // 本地爬虫微服务返回的 Data 嵌套体
+        validFactoryData = factoryRes.Data;
+      }
+    }
+
+    if (validFactoryData && Array.isArray(validFactoryData)) {
+      reportData.value = validFactoryData;
       reportComponentData.value = compRes;
 
       // 仅提取目标时间特征，兼容嵌套结构与帕斯卡/小写命名差异，丢弃其余报告数据

@@ -1,8 +1,8 @@
 /**
  * @function showToast
- * @description 全局独立 UI 渲染器。脱离 Vue 上下文提供原生 DOM 级别的轻量化状态反馈通知。
- * @param {string} msg 通知内容
- * @param {boolean} [isSuccess=true] 状态标识
+ * @description 游离于框架体系之外的原生级视图反馈渲染器。利用微任务（Microtask）与动画帧进行高优先级样式构建。
+ * @param {string} msg 广播载荷
+ * @param {boolean} [isSuccess=true] 状态位判决
  * @returns {void}
  */
 export function showToast(msg: string, isSuccess: boolean = true): void {

@@ -1,13 +1,10 @@
 /**
  * @interface IUserSettings
- * @description 用户配置约束模型，定义前端增强特性的启停开关及微服务寻址域。
+ * @description 应用状态配置契约。定义功能增强模块的启停控制及底层微服务的域名寻址。
  */
 export interface IUserSettings {
-    /** @property {boolean} 生产集成大屏增强功能开关 */
     enableProductionBigScreen: boolean;
-    /** @property {boolean} 仓储项目数据清洗增强功能开关 */
     enableProjectInventory: boolean;
-    /** @property {string} 本地爬虫服务器基准域名 */
     crawlerDomain: string;
 }
 
@@ -21,7 +18,7 @@ const STORAGE_KEY = 'HHJG_BIM_USER_SETTINGS';
 
 /**
  * @class SettingsManager
- * @description 全局配置管理器，采用单例模式接管持久化存储的读写，确保应用生命周期内配置状态的一致性与安全降级。
+ * @description 全局配置管理器。利用单例模式封装本地存储读写，确保配置状态生命周期一致性，并提供防篡改数据副本。
  */
 class SettingsManager {
     private settings: IUserSettings;
@@ -32,9 +29,8 @@ class SettingsManager {
 
     /**
      * @method loadSettings
-     * @description 执行配置反序列化，具备结构校验与异常熔断回退机制。
-     * @returns {IUserSettings} 运行时配置实例
-     * @private
+     * @description 配置反序列化与状态装载，内建异常捕获与默认值降级机制。
+     * @returns {IUserSettings}
      */
     private loadSettings(): IUserSettings {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -42,7 +38,7 @@ class SettingsManager {
             try {
                 return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
             } catch (e) {
-                console.warn('[System] 配置解析失效，已降级至默认配置');
+                console.warn('[System] 配置解析异常，已执行默认配置降级');
                 return DEFAULT_SETTINGS;
             }
         }
@@ -51,8 +47,8 @@ class SettingsManager {
 
     /**
      * @method get
-     * @description 暴露配置副本，阻断外部针对单例成员的直接内存篡改。
-     * @returns {IUserSettings} 配置快照
+     * @description 获取配置内存快照。
+     * @returns {IUserSettings}
      */
     public get(): IUserSettings {
         return { ...this.settings };
@@ -60,8 +56,8 @@ class SettingsManager {
 
     /**
      * @method update
-     * @description 增量更新内存状态并同步落盘持久化。
-     * @param {Partial<IUserSettings>} newSettings 变更载荷
+     * @description 执行配置项增量更新，并同步至持久化存储层。
+     * @param {Partial<IUserSettings>} newSettings
      */
     public update(newSettings: Partial<IUserSettings>): void {
         this.settings = { ...this.settings, ...newSettings };

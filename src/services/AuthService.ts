@@ -2,7 +2,7 @@ import { NetworkHook } from '../core/NetworkHook';
 
 /**
  * @class AuthService
- * @description 鉴权状态机。订阅网络底层头部嗅探事件流，接管 Token 的提权、缓存续期与组件间的异步阻塞等待机制。
+ * @description 鉴权凭证调度机。订阅底层网络请求头事件流，负责核心会话信息（Token、对象 ID 等）的截获、时效缓存以及跨服务调用时的异步闭锁。
  */
 class AuthService {
     public dynamicHeaders: Record<string, string> = {
@@ -41,8 +41,7 @@ class AuthService {
 
     /**
      * @method initObserver
-     * @description 初始化观察者模式，与网络基建层完成生命周期绑定。
-     * @returns {void}
+     * @description 将凭证更新策略桥接至网络嗅探管线，实现被动式授权更新。
      */
     public initObserver(): void {
         NetworkHook.getInstance().registerHeaderSniffer((key, value) => {
@@ -67,6 +66,11 @@ class AuthService {
         this.dynamicHeaders[lowerKey] = value;
     }
 
+    /**
+     * @method waitForToken
+     * @description 异步闭锁函数，阻断依赖提权通讯的方法直至凭证就绪。
+     * @returns {Promise<string>}
+     */
     public async waitForToken(): Promise<string> {
         if (this.isSessionTokenReady && this.dynamicHeaders['authorization']) {
             return Promise.resolve(this.dynamicHeaders['authorization']);

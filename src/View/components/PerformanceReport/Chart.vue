@@ -8,7 +8,7 @@
 <script setup lang="ts">
 /**
  * @module BaseChartRenderer
- * @description ECharts 渲染器封装组件。管控画布实例生命周期，基于 Props 的响应式变更自动实施重绘。
+ * @description ECharts 渲染器封装组件。管控画布实例生命周期，基于 Props 的响应式变更自动实施重绘，支持折线图与双饼图平滑切换。
  */
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import * as echarts from 'echarts';
@@ -35,7 +35,7 @@ let quarterChartInstance: echarts.ECharts | null = null;
 
 /**
  * @method initCharts
- * @description 图表状态机构造器。注入主题配置及硬编码网格间距，初始化或全量刷新折线画布。
+ * @description 图表状态机构造器。注入主题配置，基于工厂/构件特征动态装载对应的坐标系折线图或空间占比饼图，通过 notMerge=true 清理残影。
  * @returns {void}
  */
 const initCharts = () => {
@@ -49,6 +49,7 @@ const initCharts = () => {
     const commonGrid = { left: '3%', right: '3%', bottom: '5%', top: '20%', containLabel: true };
     const commonYAxis = { type: 'value', splitLine: { lineStyle: { color: '#334155', type: 'dashed' } }, axisLabel: { color: '#94a3b8' } };
 
+    // 顶部图表：恒定为月度折线趋势图
     monthChartInstance?.setOption({
         title: { text: props.config.monthTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
         tooltip: { trigger: 'axis' },
@@ -63,6 +64,7 @@ const initCharts = () => {
         }]
     }, true);
 
+    // 底部图表：依据数据类型动态分发为折线图或双饼图
     if (props.activeType === 'factory') {
         quarterChartInstance?.setOption({
             title: { text: props.config.quarterTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
@@ -79,24 +81,77 @@ const initCharts = () => {
         }, true);
     } else {
         const personList = props.personnelMatrix?.list || [];
-        const seriesData = personList.map((p: any) => ({
+        
+        // 拆解人员矩阵，构造 ECharts 饼图专属的 name-value 数据对
+        const prevMonthData = personList.map((p: any) => ({
             name: p.name,
-            type: 'line',
-            smooth: false,
-            symbolSize: 8,
-            lineStyle: { width: 3 },
-            label: { show: true, position: 'top', fontSize: 12 },
-            data: [p.prevWeight, p.currWeight]
+            value: p.prevWeight
+        }));
+        
+        const currMonthData = personList.map((p: any) => ({
+            name: p.name,
+            value: p.currWeight
         }));
 
         quarterChartInstance?.setOption({
-            title: { text: props.config.quarterTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
-            tooltip: { trigger: 'axis' },
-            legend: { top: '8%', textStyle: { color: '#94a3b8' } },
-            grid: { ...commonGrid, top: '25%' },
-            xAxis: { type: 'category', data: [props.personnelMatrix.prevMonth, props.personnelMatrix.currMonth], axisLabel: { color: '#94a3b8' } },
-            yAxis: commonYAxis,
-            series: seriesData
+            title: [
+                { text: props.config.quarterTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
+                { text: props.personnelMatrix.prevMonth, left: '25%', top: '15%', textAlign: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
+                { text: props.personnelMatrix.currMonth, left: '75%', top: '15%', textAlign: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } }
+            ],
+            tooltip: { 
+                trigger: 'item',
+                formatter: (params: any) => {
+                    const roundedVal = Math.round(params.value || 0);
+                    return `${params.seriesName} <br/>${params.name} : ${roundedVal}t<br/>${params.percent}%`;
+                }
+            },
+            legend: { 
+                bottom: '0%', 
+                textStyle: { color: '#94a3b8' } 
+            },
+            series: [
+                {
+                    name: props.personnelMatrix.prevMonth,
+                    type: 'pie',
+                    radius: '35%',
+                    center: ['28%', '55%'],
+                    data: prevMonthData,
+                    label: { 
+                        show: true, 
+                        formatter: (params: any) => {
+                            const roundedVal = Math.round(params.value || 0);
+                            return `${params.name}\n${roundedVal}t\n${params.percent}%`;
+                        }, 
+                        color: '#f8fafc',
+                        fontSize: 11
+                    },
+                    itemStyle: {
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }
+                },
+                {
+                    name: props.personnelMatrix.currMonth,
+                    type: 'pie',
+                    radius: '35%',
+                    center: ['72%', '55%'],
+                    data: currMonthData,
+                    label: { 
+                        show: true, 
+                        formatter: (params: any) => {
+                            const roundedVal = Math.round(params.value || 0);
+                            return `${params.name}\n${roundedVal}t\n${params.percent}%`;
+                        }, 
+                        color: '#f8fafc',
+                        fontSize: 11
+                    },
+                    itemStyle: {
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }
+                }
+            ]
         }, true);
     }
 };

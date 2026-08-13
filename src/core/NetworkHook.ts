@@ -1,9 +1,8 @@
 /**
  * @interface IResponseInterceptor
- * @description 网络响应拦截器模型。定义路由匹配规则与生命周期钩子，支撑动态数据回填与流量重放。
+ * @description 网络响应拦截器契约。规范拦截器的标识、路由匹配规则、前置数据预取逻辑及响应体篡改函数。
  */
 export interface IResponseInterceptor {
-    /** @property {string} id 拦截器全局唯一标识 */
     id: string;
     urlMatcher: (url: string) => boolean;
     beforeRequest?: () => Promise<any>;
@@ -12,7 +11,7 @@ export interface IResponseInterceptor {
 
 /**
  * @class NetworkHook
- * @description 底层网络流量劫持基建。通过重写 XHR 与 Fetch 原型链，提供无侵入式的请求/响应拦截及 Header 嗅探管线。
+ * @description 网络通讯挂钩基建。通过侵入式重写 XHR 与 Fetch 原型链，提供无感知的 HTTP 头部嗅探与响应报文重组功能。
  */
 export class NetworkHook {
     private static instance: NetworkHook;
@@ -24,7 +23,7 @@ export class NetworkHook {
 
     /**
      * @method getInstance
-     * @description 获取挂钩基建单例实例。
+     * @description 获取网络挂钩单例。
      * @returns {NetworkHook}
      */
     public static getInstance(): NetworkHook {
@@ -34,6 +33,10 @@ export class NetworkHook {
         return NetworkHook.instance;
     }
 
+    /**
+     * @method init
+     * @description 激活全局网络劫持引擎，确保单例生命周期内仅执行一次挂载。
+     */
     public init(): void {
         if (this.isInitialized) return;
         this.hijackXHR();
@@ -41,21 +44,25 @@ export class NetworkHook {
         this.isInitialized = true;
     }
 
+    /**
+     * @method registerHeaderSniffer
+     * @description 注册请求头嗅探器，捕获业务流量中的授权凭证。
+     * @param {(key: string, value: string) => void} callback
+     */
     public registerHeaderSniffer(callback: (key: string, value: string) => void): void {
         this.headerSniffers.push(callback);
     }
 
     /**
      * @method registerResponseInterceptor
-     * @description 挂载响应拦截器，实施严格 ID 比对以防止热重载导致的内存泄漏。
-     * @param {IResponseInterceptor} interceptor 拦截器实例
-     * @returns {void}
+     * @description 挂载响应篡改管线，利用严格 ID 机制防止重复注册造成的内存泄漏。
+     * @param {IResponseInterceptor} interceptor
      */
     public registerResponseInterceptor(interceptor: IResponseInterceptor): void {
         const existingIndex = this.responseInterceptors.findIndex(i => i.id === interceptor.id);
         
         if (existingIndex !== -1) {
-            console.warn(`[Hook] 拦截器冲突覆盖: ${interceptor.id}`);
+            console.warn(`[Hook] 拦截器已重置: ${interceptor.id}`);
             this.responseInterceptors[existingIndex] = interceptor;
         } else {
             this.responseInterceptors.push(interceptor);
@@ -139,7 +146,7 @@ export class NetworkHook {
                         prefetchData = data;
                         executeSend();
                     }).catch(error => {
-                        console.error(`[Hook] 前置依赖阻断 [${matchedInterceptor.id}]`, error);
+                        console.error(`[Hook] 前置依赖阻断: ${matchedInterceptor.id}`, error);
                         executeSend();
                     });
                 } else {

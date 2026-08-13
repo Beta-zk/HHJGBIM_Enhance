@@ -5,7 +5,7 @@ import { settings } from '../config/settings';
 
 /**
  * @class ProjectService
- * @description 项目实体聚合服务。内置请求熔断与双链路容灾策略，确保本地爬虫与线上兜底服务的平滑切换。
+ * @description 实体状态同步网关。内建单一职责的单例内存级缓存（Memoization）与并发闭锁，规避雪崩效应并执行容灾链路切换。
  */
 class ProjectService {
     private cachedPlmJson: any = null;
@@ -18,7 +18,7 @@ class ProjectService {
 
     /**
      * @method fetchProjectEntities
-     * @description 拉取项目实体池数据，含内存级缓存防护机制。
+     * @description 获取全局实体字典。多实例并发调用时仅激活单一通讯线程。
      * @returns {Promise<any>}
      */
     public async fetchProjectEntities(): Promise<any> {
@@ -39,33 +39,19 @@ class ProjectService {
         return this.fetchPromise;
     }
 
-    /**
-     * @method executeFetchStrategy
-     * @description 调度多级网络降级链路。
-     * @returns {Promise<any>}
-     * @private
-     */
     private async executeFetchStrategy(): Promise<any> {
         try {
             const localData = await this.fetchLocalInfo(3000);
             if (localData && Array.isArray(localData) && localData.length > 0) {
-                console.log('[Service] 启用本地微服务链路');
                 return { Data: localData };
             }
         } catch (error) {
-            console.warn('[Service] 链路降级至云端');
+            console.warn('[Service] 链路降级: PLM_ProjectEntities');
         }
 
         return await GMHttpClient.post(API_URLS.PLM_PROJECT_ENTITIES, this.defaultPayload);
     }
 
-    /**
-     * @method fetchLocalInfo
-     * @description 向局域网爬虫下探并配置熔断超时管控。
-     * @param {number} timeoutMs 熔断阈值（毫秒）
-     * @returns {Promise<any>}
-     * @private
-     */
     private fetchLocalInfo(timeoutMs: number): Promise<any> {
         return new Promise((resolve) => {
             const timer = setTimeout(() => {

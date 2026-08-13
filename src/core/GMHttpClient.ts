@@ -4,20 +4,20 @@ declare const GM_xmlhttpRequest: any;
 
 /**
  * @class GMHttpClient
- * @description 沙盒提权 HTTP 客户端，绕过原生同源策略，负责全量跨域通信，集成自动鉴权拦截与状态机联动。
+ * @description 特权网络客户端。基于沙盒提权机制执行跨域通讯，内置 HTTP 401 状态监听与鉴权凭证的自动化熔断处理。
  */
 export class GMHttpClient {
     /**
      * @method post
-     * @description 发起特权 POST 通讯，内置 401 态自动清理鉴权凭证逻辑。
+     * @description 执行 POST 提权请求，自动反序列化响应体并实施鉴权状态审计。
      * @param {string} url 目标绝对寻址
      * @param {any} payload 数据载荷
-     * @returns {Promise<any>} 反序列化响应体
+     * @returns {Promise<any>}
      */
     public static async post(url: string, payload: any): Promise<any> {
         return new Promise((resolve) => {
             if (typeof GM_xmlhttpRequest === 'undefined') {
-                console.error('[Network] GM_xmlhttpRequest 未授权');
+                console.error('[Network] 提权环境缺失，GM_xmlhttpRequest 未注册');
                 resolve(null);
                 return;
             }
@@ -33,7 +33,7 @@ export class GMHttpClient {
                         try {
                             const json = JSON.parse(response.responseText);
                             if (json && json.StatusCode === 401) {
-                                console.warn(`[Network] 鉴权逾期: ${url}`);
+                                console.warn(`[Network] 鉴权凭证失效，触发熔断: ${url}`);
                                 authService.clearAuth();
                                 resolve(null);
                                 return;

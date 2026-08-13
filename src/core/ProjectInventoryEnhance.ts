@@ -5,7 +5,7 @@ import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProjectInventoryEnhance
- * @description 业务数据清洗中间件。利用网络拦截基建，合并 PLM 微服务与仓储服务的数据集，实现实体状态的动态注入。
+ * @description 业务数据重组中间件。结合网络挂钩的前置依赖处理特性（beforeRequest），实现异构系统数据集的联合映射与字段填充。
  */
 export class ProjectInventoryEnhance {
     private injectTargetData(warehouseJson: any, plmJson: any): any {
@@ -38,11 +38,15 @@ export class ProjectInventoryEnhance {
             });
             return warehouseJson;
         } catch (error) {
-            console.error('[Middleware] 数据清洗异常', error);
+            console.error('[Middleware] 实体映射发生异常', error);
             return warehouseJson;
         }
     }
 
+    /**
+     * @method init
+     * @description 初始化清洗管线，注册仓储数据的响应拦截器及 PLM 字典的前置拉取逻辑。
+     */
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
             id: 'INTERCEPTOR_WAREHOUSE_STATS',

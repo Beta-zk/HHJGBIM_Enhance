@@ -5,14 +5,14 @@ import { settings } from '../config/settings';
 
 /**
  * @class SystemService
- * @description 系统级聚合服务。封装针对底层微服务系统报告、探活等业务的数据拉取接口。
+ * @description 系统级控制面。封装针对外部微服务架构的健康度评估（Ping/HealthCheck）与底层运行时指令的分发投递。
  */
 class SystemService {
     
     /**
      * @method submitSystemReport
-     * @description 提交或获取系统级报表数据。
-     * @param {Record<string, any>} [payload={}] 报表请求或提交的参数载荷
+     * @description 执行系统运行指标的投递归档。
+     * @param {Record<string, any>} [payload={}] 
      * @returns {Promise<any>} 
      */
     public async submitSystemReport(payload: Record<string, any> = {}): Promise<any> {
@@ -29,8 +29,8 @@ class SystemService {
 
     /**
      * @method ping
-     * @description 触发系统探活请求，检查底层微服务连通性。
-     * @param {Record<string, any>} [params={}] 探活参数载荷
+     * @description 派发 RPC 探活信号，验证远程资源就绪态。
+     * @param {Record<string, any>} [params={}] 
      * @returns {Promise<any>}
      */
     public async ping(params: Record<string, any> = {}): Promise<any> {
@@ -47,8 +47,8 @@ class SystemService {
 
     /**
      * @method systemInt
-     * @description 触发微服务系统层级的初始化交互或特定指令。
-     * @param {Record<string, any>} [params={}] 指令参数载荷
+     * @description 发起系统环境或扩展模块的初始约束指派。
+     * @param {Record<string, any>} [params={}] 
      * @returns {Promise<any>}
      */
     public async systemInt(params: Record<string, any> = {}): Promise<any> {

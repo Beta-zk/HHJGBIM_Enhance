@@ -2,13 +2,13 @@ import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProductionIntegrationBigScreenEnhance
- * @description UI 层交互增强组件。通过 DOM 轮询与事件委托机制，将静态看板元素与宿主 SPA 路由实现跨层级桥接。
+ * @description 生产看板交互增强引擎。通过监听特定数据接口触发 DOM 轮询机制，实施无侵入式的元素劫持与点击穿透路由绑定。
  */
 export class ProductionIntegrationBigScreenEnhance {
     
     /**
      * @method init
-     * @description 初始化生命周期，注入看板路由网络嗅探器。
+     * @description 装载增强生命周期，向网络基建挂载目标报表接口的嗅探规则。
      */
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
@@ -21,11 +21,6 @@ export class ProductionIntegrationBigScreenEnhance {
         });
     }
 
-    /**
-     * @method injectDomInteraction
-     * @description 异步轮询目标 DOM 容器，实现隔离事件的透明注入。
-     * @private
-     */
     private injectDomInteraction(): void {
         const MAX_ATTEMPTS = 20;
         const INTERVAL_MS = 500;
@@ -76,7 +71,7 @@ export class ProductionIntegrationBigScreenEnhance {
                 });
 
                 if (successfulInjections === targetConfigs.length) {
-                    console.log('[UI] 大屏交互挂载成功');
+                    console.log('[UI] 看板交互挂载完毕');
                     clearInterval(timer);
                     return;
                 }
@@ -84,17 +79,11 @@ export class ProductionIntegrationBigScreenEnhance {
 
             if (attempts >= MAX_ATTEMPTS) {
                 clearInterval(timer);
-                console.warn('[UI] 目标 DOM 树超时未就绪');
+                console.warn('[UI] 目标 DOM 解析超时');
             }
         }, INTERVAL_MS);
     }
 
-    /**
-     * @method triggerSidebarMenuClick
-     * @description 在 DOM 树中检索特征菜单节点并派发物理级点击事件。
-     * @param {string} targetText 目标特征文本
-     * @private
-     */
     private triggerSidebarMenuClick(targetText: string): void {
         const menuItems = document.querySelectorAll('.ep-menu-item');
         let isMatchFound = false;
@@ -110,7 +99,7 @@ export class ProductionIntegrationBigScreenEnhance {
         }
 
         if (!isMatchFound) {
-            console.error(`[UI] 侧边栏节点未命中: ${targetText}`);
+            console.error(`[UI] 导航节点索引失败: ${targetText}`);
         }
     }
 }

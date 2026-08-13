@@ -8,7 +8,7 @@ import App from './view/App.vue';
 
 /**
  * @module Main
- * @description 应用启动层，调度基建状态机流转及模块按需挂载。
+ * @description 应用主入口。统筹网络劫持引擎、鉴权状态机及各类增强中间件的初始化顺序，并负责外挂交互框架的挂载。
  */
 (function() {
     'use strict';
@@ -26,7 +26,7 @@ import App from './view/App.vue';
         new ProductionIntegrationBigScreenEnhance().init();
     }
     
-    console.log('[Core] 引擎加载完毕', userConfig);
+    console.log('[Core] 增强核心引擎装载完毕');
 
     const mountVueUI = () => {
         const uiContainer = document.createElement('div');
