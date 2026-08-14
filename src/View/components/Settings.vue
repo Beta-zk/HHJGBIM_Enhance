@@ -49,7 +49,7 @@
                         <span class="ping-indicator"
                             :title="pingStatus === 'success' ? '连通正常' : (pingStatus === 'error' ? '失联或跨域拒绝' : (pingStatus === 'loading' ? '检测中...' : '待检测'))">
                             {{ pingStatus === 'success' ? '✅' : (pingStatus === 'error' ? '❌' : (pingStatus ===
-                            'loading' ? '⏳' : '⚪')) }}
+                                'loading' ? '⏳' : '⚪')) }}
                         </span>
                         <input type="text" v-model="formState.crawlerDomain" @blur="checkPing" class="crawler-input"
                             placeholder="例如: http://127.0.0.1:8000" />
@@ -73,18 +73,15 @@
 </template>
 
 <script setup lang="ts">
-/**
- * @module SystemSettings
- * @description 应用状态集线器。管理全局开关、轮询探测探针及本地持久化通信策略。
- */
 import { reactive, onMounted, ref } from 'vue';
-import { settings, IUserSettings } from '../../config/settings';
+import { settings, type IUserSettings } from '../../config/settings';
 import { API_URLS } from '../../config/constants';
 import { GMHttpClient } from '../../core/GMHttpClient';
+import { showToast } from '../../utils/helpers';
 
 const emit = defineEmits(['close']);
 
-const formState = reactive<IUserSettings & { deepeningPersonnel?: string }>({
+const formState = reactive<IUserSettings>({
     enableProductionBigScreen: true,
     enableProjectInventory: true,
     crawlerDomain: '',
@@ -95,7 +92,7 @@ const pingStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
 const isInitializing = ref(false);
 
 onMounted(() => {
-    const currentConfig = settings.get() as any;
+    const currentConfig = settings.get();
     formState.enableProductionBigScreen = currentConfig.enableProductionBigScreen;
     formState.enableProjectInventory = currentConfig.enableProjectInventory;
     formState.crawlerDomain = currentConfig.crawlerDomain;
@@ -106,11 +103,6 @@ onMounted(() => {
     }, 100);
 });
 
-/**
- * @method checkPing
- * @description 通过跨域代理验证后端爬虫服务的心跳体征，更新状态机枚举。
- * @returns {Promise<void>}
- */
 const checkPing = async () => {
     if (!formState.crawlerDomain) {
         pingStatus.value = 'idle';
@@ -126,23 +118,38 @@ const checkPing = async () => {
     }
 };
 
-const triggerInit = async () => {};
+const triggerInit = async () => {
+    if (isInitializing.value) return;
+    if (!formState.crawlerDomain) {
+        showToast('请先填写爬虫服务地址', false);
+        return;
+    }
+    isInitializing.value = true;
+    try {
+        const targetUrl = `${formState.crawlerDomain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_INT_PATH}`;
+        const res = await GMHttpClient.post(targetUrl, {});
+        if (res) {
+            showToast('系统初始化指令已成功下发', true);
+        } else {
+            showToast('系统初始化失败，请检查爬虫服务状态', false);
+        }
+    } catch (error) {
+        showToast('系统初始化通讯异常', false);
+    } finally {
+        isInitializing.value = false;
+    }
+};
 
 const handleClose = () => { emit('close'); };
 
-/**
- * @method handleSave
- * @description 构建载荷并将脏数据下沉至本地 `SettingsManager` 中，完成全局快照覆盖。
- * @returns {void}
- */
 const handleSave = () => {
     settings.update({
         enableProductionBigScreen: formState.enableProductionBigScreen,
         enableProjectInventory: formState.enableProjectInventory,
         crawlerDomain: formState.crawlerDomain,
         deepeningPersonnel: formState.deepeningPersonnel
-    } as any);
-    alert('配置已持久化保存，请手动刷新页面以重新加载增强引擎。');
+    });
+    showToast('配置已持久化保存，请手动刷新页面以重新加载增强引擎。', true);
     emit('close');
 };
 </script>

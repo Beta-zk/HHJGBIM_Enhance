@@ -12,13 +12,14 @@
  */
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import * as echarts from 'echarts';
+import type { PersonnelMatrix, PersonnelWeight } from '../../../types';
 
 const props = defineProps<{
     activeType: 'factory' | 'component';
     monthNames: string[];
     monthValues: number[];
     quarterValues: number[];
-    personnelMatrix: any;
+    personnelMatrix: PersonnelMatrix;
     config: {
         monthTitle: string;
         quarterTitle: string;
@@ -83,12 +84,12 @@ const initCharts = () => {
         const personList = props.personnelMatrix?.list || [];
         
         // 拆解人员矩阵，构造 ECharts 饼图专属的 name-value 数据对
-        const prevMonthData = personList.map((p: any) => ({
+        const prevMonthData = personList.map((p: PersonnelWeight) => ({
             name: p.name,
             value: p.prevWeight
         }));
         
-        const currMonthData = personList.map((p: any) => ({
+        const currMonthData = personList.map((p: PersonnelWeight) => ({
             name: p.name,
             value: p.currWeight
         }));

@@ -6,12 +6,14 @@ export interface IUserSettings {
     enableProductionBigScreen: boolean;
     enableProjectInventory: boolean;
     crawlerDomain: string;
+    deepeningPersonnel?: string;
 }
 
 const DEFAULT_SETTINGS: IUserSettings = {
     enableProductionBigScreen: true,
     enableProjectInventory: true,
-    crawlerDomain: 'http://127.0.0.1:8000'
+    crawlerDomain: 'http://127.0.0.1:8000',
+    deepeningPersonnel: ''
 };
 
 const STORAGE_KEY = 'HHJG_BIM_USER_SETTINGS';
@@ -27,11 +29,6 @@ class SettingsManager {
         this.settings = this.loadSettings();
     }
 
-    /**
-     * @method loadSettings
-     * @description 配置反序列化与状态装载，内建异常捕获与默认值降级机制。
-     * @returns {IUserSettings}
-     */
     private loadSettings(): IUserSettings {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -45,20 +42,10 @@ class SettingsManager {
         return DEFAULT_SETTINGS;
     }
 
-    /**
-     * @method get
-     * @description 获取配置内存快照。
-     * @returns {IUserSettings}
-     */
     public get(): IUserSettings {
         return { ...this.settings };
     }
 
-    /**
-     * @method update
-     * @description 执行配置项增量更新，并同步至持久化存储层。
-     * @param {Partial<IUserSettings>} newSettings
-     */
     public update(newSettings: Partial<IUserSettings>): void {
         this.settings = { ...this.settings, ...newSettings };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));

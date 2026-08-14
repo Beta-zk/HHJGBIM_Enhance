@@ -92,12 +92,13 @@
  * @description 报表视图渲染器。接收顶层下发的聚合载荷，并在 Header 展示爬虫快照时间。
  */
 import { ref, computed, onMounted, nextTick } from 'vue';
+import type { FactoryMonthItem, PersonnelMatrix } from '../../types';
 import Chart from './PerformanceReport/Chart.vue';
 
 const props = defineProps<{
-  rawData: any[];
+  rawData: FactoryMonthItem[];
   componentData: any;
-  personnelMatrix: any;
+  personnelMatrix: PersonnelMatrix;
   crawlDate?: string;
 }>();
 

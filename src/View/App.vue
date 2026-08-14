@@ -36,6 +36,8 @@ import { factoryService } from '../services/FactoryService';
 import { componentService } from '../services/ComponentService';
 import { systemService } from '../services/SystemService';
 import { settings } from '../config/settings';
+import { showToast } from '../utils/helpers';
+import type { FactoryMonthItem, PersonnelMatrix, PersonnelWeight } from '../types';
 import PerformanceReport from './components/PerformanceReport.vue';
 import Settings from './components/Settings.vue';
 
@@ -43,11 +45,11 @@ const isExpanded = ref(false);
 const isLoading = ref(false);
 const showReport = ref(false);
 const showSettings = ref(false);
-const reportData = ref<any[]>([]);
+const reportData = ref<FactoryMonthItem[]>([]);
 const reportComponentData = ref<any>(null);
 const reportCrawlDate = ref<string>('');
 
-const personnelReportData = ref<any>({ currMonth: '', prevMonth: '', list: [] });
+const personnelReportData = ref<PersonnelMatrix>({ currMonth: '', prevMonth: '', list: [] });
 
 const togglePanel = () => { isExpanded.value = !isExpanded.value; };
 
@@ -78,7 +80,7 @@ const handleOpenReport = async () => {
     const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
 
-    const userConfig = settings.get() as any;
+    const userConfig = settings.get();
     const personnelList = userConfig.deepeningPersonnel
       ? userConfig.deepeningPersonnel.split(',').map((s: string) => s.trim()).filter(Boolean)
       : [];
@@ -89,7 +91,7 @@ const handleOpenReport = async () => {
       systemService.submitSystemReport().catch(() => null)
     ]);
 
-    const extractedPersonnelData = [];
+    const extractedPersonnelData: PersonnelWeight[] = [];
     for (const person of personnelList) {
       const [currData, prevData] = await Promise.all([
         componentService.getMonthWeight(currMonthStr, person).catch(() => null),
@@ -103,26 +105,21 @@ const handleOpenReport = async () => {
       });
     }
 
-    // 增强的数据校验逻辑：兼容云端包装结构与本地爬虫微服务直返结构
     let validFactoryData = null;
     if (factoryRes) {
       if (factoryRes.StatusCode === 200 && factoryRes.IsSucceed && factoryRes.Data) {
-        // 云端宿主接口兜底返回的规范体
         validFactoryData = factoryRes.Data;
       } else if (!factoryRes.StatusCode && Array.isArray(factoryRes)) {
-        // 本地爬虫微服务返回的一维纯净数组
         validFactoryData = factoryRes;
       } else if (!factoryRes.StatusCode && factoryRes.Data && Array.isArray(factoryRes.Data)) {
-        // 本地爬虫微服务返回的 Data 嵌套体
         validFactoryData = factoryRes.Data;
       }
     }
 
     if (validFactoryData && Array.isArray(validFactoryData)) {
-      reportData.value = validFactoryData;
+      reportData.value = validFactoryData as FactoryMonthItem[];
       reportComponentData.value = compRes;
 
-      // 仅提取目标时间特征，兼容嵌套结构与帕斯卡/小写命名差异，丢弃其余报告数据
       let extractedDate = '';
       if (sysReportRes) {
         const sysDataObj = sysReportRes.data || sysReportRes.Data || sysReportRes;
@@ -142,10 +139,10 @@ const handleOpenReport = async () => {
       showReport.value = true;
       isExpanded.value = false;
     } else {
-      alert('核心工厂数据接口返回异常或无数据');
+      showToast('核心工厂数据接口返回异常或无数据', false);
     }
   } catch (error) {
-    alert('网络请求彻底熔断');
+    showToast('网络请求彻底熔断', false);
   } finally {
     isLoading.value = false;
   }
@@ -153,7 +150,6 @@ const handleOpenReport = async () => {
 </script>
 
 <style scoped>
-/* 保持原有样式，未变更 */
 .hhjgbim-sidebar {
   position: fixed;
   top: 50%;
