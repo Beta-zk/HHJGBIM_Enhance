@@ -1,114 +1,106 @@
 <template>
-    <div class="settings-overlay">
-        <div class="settings-container">
-            <div class="settings-header">
-                <span class="title">偏好设置中心</span>
-                <button class="close-btn" @click="handleClose">放弃更改并关闭</button>
+    <div class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-[2147483648] flex items-center justify-center">
+        <div class="w-[50vw] min-w-[550px] max-w-[800px] bg-slate-800 border border-solid border-slate-700 rounded-xl shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5)] flex flex-col">
+            <div class="p-5 px-6 border-0 border-b border-solid border-slate-700 flex justify-between items-center">
+                <span class="text-slate-50 text-[18px] font-semibold">偏好设置中心</span>
+                <button class="bg-transparent border border-solid border-slate-600 rounded-md text-slate-400 py-1.5 px-3 cursor-pointer appearance-none outline-none transition-all duration-200 hover:bg-slate-700 hover:text-slate-50 hover:border-slate-50" @click="handleClose">放弃更改并关闭</button>
             </div>
 
-            <div class="settings-body">
-                <div class="setting-item">
-                    <div class="item-info">
-                        <h4 class="item-title">生产集成大屏增强</h4>
-                        <p class="item-desc">允许点击指标直接无缝跳转至对应的系统二级页面。</p>
+            <div class="p-6 flex flex-col gap-6">
+                <div class="flex justify-between items-center bg-slate-900 p-4 rounded-lg border border-solid border-slate-800">
+                    <div class="flex-1 mr-5">
+                        <h4 class="m-0 mb-1.5 text-slate-200 text-[15px]">生产集成大屏增强</h4>
+                        <p class="m-0 text-slate-400 text-[13px] leading-relaxed">允许点击指标直接无缝跳转至对应的系统二级页面。</p>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" v-model="formState.enableProductionBigScreen">
-                        <span class="slider"></span>
+                    <label class="relative inline-block w-11 h-6 shrink-0">
+                        <input type="checkbox" v-model="formState.enableProductionBigScreen" class="peer opacity-0 w-0 h-0 absolute appearance-none">
+                        <span class="absolute cursor-pointer inset-0 bg-slate-600 transition duration-300 rounded-full before:absolute before:content-[''] before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:transition before:duration-300 before:rounded-full peer-checked:bg-sky-400 peer-checked:before:translate-x-[20px]"></span>
                     </label>
                 </div>
 
-                <div class="setting-item">
-                    <div class="item-info">
-                        <h4 class="item-title">项目库存统计状态增强</h4>
-                        <p class="item-desc">为新增的一列状态提供数据信息。</p>
+                <div class="flex justify-between items-center bg-slate-900 p-4 rounded-lg border border-solid border-slate-800">
+                    <div class="flex-1 mr-5">
+                        <h4 class="m-0 mb-1.5 text-slate-200 text-[15px]">项目库存统计状态增强</h4>
+                        <p class="m-0 text-slate-400 text-[13px] leading-relaxed">为新增的一列状态提供数据信息。</p>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" v-model="formState.enableProjectInventory">
-                        <span class="slider"></span>
+                    <label class="relative inline-block w-11 h-6 shrink-0">
+                        <input type="checkbox" v-model="formState.enableProjectInventory" class="peer opacity-0 w-0 h-0 absolute appearance-none">
+                        <span class="absolute cursor-pointer inset-0 bg-slate-600 transition duration-300 rounded-full before:absolute before:content-[''] before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:transition before:duration-300 before:rounded-full peer-checked:bg-sky-400 peer-checked:before:translate-x-[20px]"></span>
                     </label>
                 </div>
 
-                <!-- 新增：条码打印联动增强配置节点 -->
-                <div class="setting-item">
-                    <div class="item-info">
-                        <h4 class="item-title">条码打印联动增强</h4>
-                        <p class="item-desc">在条码打印页通过排产单号快捷查询构件条码，并自动级联选中所属项目执行查询。</p>
+                <div class="flex justify-between items-center bg-slate-900 p-4 rounded-lg border border-solid border-slate-800">
+                    <div class="flex-1 mr-5">
+                        <h4 class="m-0 mb-1.5 text-slate-200 text-[15px]">条码打印联动增强</h4>
+                        <p class="m-0 text-slate-400 text-[13px] leading-relaxed">在条码打印页通过排产单号快捷查询构件条码，并自动级联选中所属项目执行查询。</p>
                     </div>
-                    <label class="switch">
-                        <input type="checkbox" v-model="formState.enableBarcodePrintEnhance">
-                        <span class="slider"></span>
+                    <label class="relative inline-block w-11 h-6 shrink-0">
+                        <input type="checkbox" v-model="formState.enableBarcodePrintEnhance" class="peer opacity-0 w-0 h-0 absolute appearance-none">
+                        <span class="absolute cursor-pointer inset-0 bg-slate-600 transition duration-300 rounded-full before:absolute before:content-[''] before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:transition before:duration-300 before:rounded-full peer-checked:bg-sky-400 peer-checked:before:translate-x-[20px]"></span>
                     </label>
                 </div>
 
-                <div class="setting-item column-layout">
-                    <div class="item-info full-width">
-                        <h4 class="item-title">深化人员名单配置</h4>
-                        <p class="item-desc">用于动态抓取月度深化绩效数据。请输入人员姓名，多人请使用英文逗号(,)隔开。</p>
+                <div class="flex flex-col items-start gap-3 bg-slate-900 p-4 rounded-lg border border-solid border-slate-800">
+                    <div class="w-full">
+                        <h4 class="m-0 mb-1.5 text-slate-200 text-[15px]">深化人员名单配置</h4>
+                        <p class="m-0 text-slate-400 text-[13px] leading-relaxed">用于动态抓取月度深化绩效数据。请输入人员姓名，多人请使用英文逗号(,)隔开。</p>
                     </div>
-                    <div class="input-full-row">
-                        <input type="text" v-model="formState.deepeningPersonnel" class="crawler-input wide-input"
+                    <div class="w-full">
+                        <input type="text" v-model="formState.deepeningPersonnel" class="w-full box-border bg-slate-800 border border-solid border-slate-600 rounded-md text-slate-50 py-2 px-3 appearance-none outline-none transition-colors duration-200 focus:border-sky-400"
                             placeholder="例如: 张三,李四,王五" />
                     </div>
                 </div>
 
-                <div class="setting-item">
-                    <div class="item-info">
-                        <h4 class="item-title">本地辅助爬虫服务地址</h4>
-                        <p class="item-desc">配置后才可使用爬虫服务。</p>
+                <div class="flex justify-between items-center bg-slate-900 p-4 rounded-lg border border-solid border-slate-800">
+                    <div class="flex-1 mr-5">
+                        <h4 class="m-0 mb-1.5 text-slate-200 text-[15px]">本地辅助爬虫服务地址</h4>
+                        <p class="m-0 text-slate-400 text-[13px] leading-relaxed">配置后才可使用爬虫服务。</p>
                     </div>
-                    <div class="crawler-input-group">
+                    <div class="flex items-center gap-2.5">
                         
-                        <!-- 状态文本遮罩层：结合Vue监听器动态触发跑马灯 -->
-                        <div class="status-marquee-wrapper" v-if="isInitializing || progressValue > 0" ref="marqueeWrapperRef">
-                            <span class="highlight-step" ref="marqueeTextRef" :class="{ 'is-scrolling': isOverflowing }">
+                        <div class="max-w-[200px] overflow-hidden whitespace-nowrap mr-2 flex items-center" v-if="isInitializing || progressValue > 0" ref="marqueeWrapperRef">
+                            <span class="text-sky-400 text-[13px] font-medium inline-block highlight-step" ref="marqueeTextRef" :class="{ 'is-scrolling': isOverflowing }">
                                 {{ currentStep }}
                             </span>
                         </div>
 
-                        <!-- 进度展示区 -->
-                        <div class="progress-wrapper" v-if="isInitializing || progressValue > 0" :title="currentStep">
-                            <svg class="progress-ring" width="28" height="28">
-                                <circle class="progress-ring-bg" stroke="#334155" stroke-width="2.5" fill="transparent" r="12" cx="14" cy="14" />
-                                <circle class="progress-ring-circle" stroke="#38bdf8" stroke-width="2.5" fill="transparent" r="12" cx="14" cy="14"
+                        <div class="relative w-7 h-7 flex items-center justify-center shrink-0" v-if="isInitializing || progressValue > 0" :title="currentStep">
+                            <svg class="transform -rotate-90" width="28" height="28">
+                                <circle stroke="#334155" stroke-width="2.5" fill="transparent" r="12" cx="14" cy="14" />
+                                <circle class="transition-all duration-400 ease-in-out" stroke="#38bdf8" stroke-width="2.5" fill="transparent" r="12" cx="14" cy="14"
                                     :style="{ strokeDasharray: '75.4', strokeDashoffset: 75.4 - (progressValue / 100) * 75.4 }" />
                             </svg>
-                            <span class="progress-text">{{ progressValue }}%</span>
+                            <span class="absolute text-[9px] text-slate-50 font-bold select-none">{{ progressValue }}%</span>
                         </div>
                         
-                        <!-- 健康度探测位 -->
-                        <span class="ping-indicator" v-else
+                        <span class="text-[18px] select-none w-6 text-center" v-else
                             :title="pingStatus === 'success' ? '连通正常' : (pingStatus === 'error' ? '失联或跨域拒绝' : (pingStatus === 'loading' ? '检测中...' : '待检测'))">
                             {{ pingStatus === 'success' ? '✅' : (pingStatus === 'error' ? '❌' : (pingStatus === 'loading' ? '⏳' : '⚪')) }}
                         </span>
 
-                        <input type="text" v-model="formState.crawlerDomain" @blur="checkPing" class="crawler-input"
+                        <input type="text" v-model="formState.crawlerDomain" @blur="checkPing" class="w-[190px] bg-slate-800 border border-solid border-slate-600 rounded-md text-slate-50 py-2 px-3 appearance-none outline-none transition-colors duration-200 focus:border-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
                             placeholder="例如: http://127.0.0.1:8000" :disabled="isInitializing" />
                             
-                        <button class="init-btn" @click="triggerInit"
+                        <button class="w-9 h-9 flex items-center justify-center shrink-0 bg-slate-700 border border-solid border-slate-600 rounded-md text-slate-50 cursor-pointer appearance-none outline-none transition-colors hover:bg-slate-600 hover:border-sky-400 disabled:hover:bg-slate-700 disabled:hover:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale" @click="triggerInit"
                             :disabled="isInitializing || pingStatus !== 'success'">
-                            <span class="action-icon">🔄</span>
+                            <span>🔄</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="tip-box">
+                <div class="bg-sky-400/10 border border-dashed border-sky-400 text-sky-300 p-3 rounded-md text-[13px]">
                     提示：修改配置后，需点击“保存配置并应用”持久化。
                 </div>
             </div>
 
-            <div class="settings-footer">
-                <button class="save-btn" @click="handleSave" :disabled="isInitializing">保存并应用</button>
+            <div class="py-4 px-6 border-0 border-t border-solid border-slate-700 flex justify-end">
+                <button class="bg-[#0284c7] text-[#f0f9ff] border-0 appearance-none outline-none py-2.5 px-5 rounded-md font-semibold cursor-pointer transition-colors duration-200 hover:bg-[#0369a1] disabled:hover:bg-[#0284c7] disabled:opacity-50 disabled:cursor-not-allowed" @click="handleSave" :disabled="isInitializing">保存并应用</button>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-/**
- * @module SystemSettings
- * @description 应用状态集线器。深度集成了基于任务凭证(TaskId)的异步爬虫轮询协议及UI级跑马灯防抖控制，已补齐所有底层配置项映射。
- */
 import { reactive, onMounted, ref, onUnmounted, watch, nextTick } from 'vue';
 import { settings, type IUserSettings } from '../../config/settings';
 import { API_URLS } from '../../config/constants';
@@ -120,7 +112,7 @@ const emit = defineEmits(['close']);
 const formState = reactive<IUserSettings>({
     enableProductionBigScreen: true,
     enableProjectInventory: true,
-    enableBarcodePrintEnhance: true, // 补全该状态位映射
+    enableBarcodePrintEnhance: true,
     crawlerDomain: '',
     deepeningPersonnel: ''
 });
@@ -139,7 +131,7 @@ onMounted(() => {
     const currentConfig = settings.get();
     formState.enableProductionBigScreen = currentConfig.enableProductionBigScreen;
     formState.enableProjectInventory = currentConfig.enableProjectInventory;
-    formState.enableBarcodePrintEnhance = currentConfig.enableBarcodePrintEnhance ?? true; // 挂载时读取
+    formState.enableBarcodePrintEnhance = currentConfig.enableBarcodePrintEnhance ?? true;
     formState.crawlerDomain = currentConfig.crawlerDomain;
     formState.deepeningPersonnel = currentConfig.deepeningPersonnel || '';
 
@@ -256,7 +248,6 @@ const handleClose = () => {
 };
 
 const handleSave = () => {
-    // 下发持久化并包含新增的配置项
     settings.update({
         enableProductionBigScreen: formState.enableProductionBigScreen,
         enableProjectInventory: formState.enableProjectInventory,
@@ -270,133 +261,6 @@ const handleSave = () => {
 </script>
 
 <style scoped>
-/* 样式部分保持原始结构未做修改 */
-.settings-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(4px);
-    z-index: 2147483648;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.settings-container {
-    width: 50vw;
-    min-width: 550px;
-    max-width: 800px;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-}
-
-.settings-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid #334155;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.settings-header .title {
-    color: #f8fafc;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.close-btn {
-    background: transparent;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    color: #94a3b8;
-    padding: 6px 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.close-btn:hover {
-    background: #334155;
-    color: #f8fafc;
-}
-
-.settings-body {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-.setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #0f172a;
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid #1e293b;
-}
-
-.column-layout {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-}
-
-.full-width {
-    width: 100%;
-    margin-right: 0;
-}
-
-.input-full-row {
-    width: 100%;
-}
-
-.wide-input {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.item-info {
-    flex: 1;
-    margin-right: 20px;
-}
-
-.item-title {
-    margin: 0 0 6px 0;
-    color: #e2e8f0;
-    font-size: 15px;
-}
-
-.item-desc {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 13px;
-    line-height: 1.4;
-}
-
-.status-marquee-wrapper {
-    max-width: 200px;
-    overflow: hidden;
-    white-space: nowrap;
-    margin-right: 8px;
-    display: flex;
-    align-items: center;
-}
-
-.highlight-step {
-    color: #38bdf8;
-    font-size: 13px;
-    font-weight: 500;
-    display: inline-block;
-}
-
 .is-scrolling {
     animation: text-marquee var(--scroll-duration, 3s) linear 0.05s infinite;
 }
@@ -404,171 +268,5 @@ const handleSave = () => {
 @keyframes text-marquee {
     0%, 15% { transform: translateX(0); }
     85%, 100% { transform: translateX(var(--scroll-dist)); }
-}
-
-.crawler-input-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.ping-indicator {
-    font-size: 18px;
-    user-select: none;
-    width: 24px;
-    text-align: center;
-}
-
-.progress-wrapper {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.progress-ring {
-    transform: rotate(-90deg);
-}
-
-.progress-ring-circle {
-    transition: stroke-dashoffset 0.4s ease-in-out;
-}
-
-.progress-text {
-    position: absolute;
-    font-size: 9px;
-    color: #f8fafc;
-    font-weight: bold;
-    user-select: none;
-}
-
-.crawler-input {
-    background: #1e293b;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    color: #f8fafc;
-    padding: 8px 12px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 190px;
-}
-
-.crawler-input:focus {
-    border-color: #38bdf8;
-}
-
-.crawler-input:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.init-btn {
-    background: #334155;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    color: #f8fafc;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.init-btn:hover:not(:disabled) {
-    background: #475569;
-    border-color: #38bdf8;
-}
-
-.init-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    filter: grayscale(100%);
-}
-
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-    flex-shrink: 0;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #475569;
-    transition: .3s;
-    border-radius: 24px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .3s;
-    border-radius: 50%;
-}
-
-input:checked+.slider {
-    background-color: #38bdf8;
-}
-
-input:checked+.slider:before {
-    transform: translateX(20px);
-}
-
-.tip-box {
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px dashed #38bdf8;
-    color: #7dd3fc;
-    padding: 12px;
-    border-radius: 6px;
-    font-size: 13px;
-}
-
-.settings-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #334155;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.save-btn {
-    background: #0284c7;
-    color: #f0f9ff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.save-btn:hover:not(:disabled) {
-    background: #0369a1;
-}
-
-.save-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 </style>

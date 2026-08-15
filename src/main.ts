@@ -1,3 +1,4 @@
+import './style.css';
 import { NetworkHook } from './core/NetworkHook';
 import { authService } from './services/AuthService';
 import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';

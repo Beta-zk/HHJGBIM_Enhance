@@ -1,7 +1,7 @@
 <template>
-    <div class="chart-container">
-        <div ref="monthChartRef" class="chart-box"></div>
-        <div ref="quarterChartRef" class="chart-box"></div>
+    <div class="flex flex-col justify-evenly h-full gap-10">
+        <div ref="monthChartRef" class="w-full flex-1 min-h-[280px]"></div>
+        <div ref="quarterChartRef" class="w-full flex-1 min-h-[280px]"></div>
     </div>
 </template>
 
@@ -50,7 +50,6 @@ const initCharts = () => {
     const commonGrid = { left: '3%', right: '3%', bottom: '5%', top: '20%', containLabel: true };
     const commonYAxis = { type: 'value', splitLine: { lineStyle: { color: '#334155', type: 'dashed' } }, axisLabel: { color: '#94a3b8' } };
 
-    // 顶部图表：恒定为月度折线趋势图
     monthChartInstance?.setOption({
         title: { text: props.config.monthTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
         tooltip: { trigger: 'axis' },
@@ -65,7 +64,6 @@ const initCharts = () => {
         }]
     }, true);
 
-    // 底部图表：依据数据类型动态分发为折线图或双饼图
     if (props.activeType === 'factory') {
         quarterChartInstance?.setOption({
             title: { text: props.config.quarterTitle, left: 'center', textStyle: { color: '#e2e8f0', fontSize: 16, fontWeight: 'bold' } },
@@ -83,7 +81,6 @@ const initCharts = () => {
     } else {
         const personList = props.personnelMatrix?.list || [];
         
-        // 拆解人员矩阵，构造 ECharts 饼图专属的 name-value 数据对
         const prevMonthData = personList.map((p: PersonnelWeight) => ({
             name: p.name,
             value: p.prevWeight
@@ -179,19 +176,3 @@ onUnmounted(() => {
     quarterChartInstance?.dispose();
 });
 </script>
-
-<style scoped>
-.chart-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
-    height: 100%;
-    gap: 40px;
-}
-
-.chart-box {
-    width: 100%;
-    flex: 1;
-    min-height: 280px;
-}
-</style>

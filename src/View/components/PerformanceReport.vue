@@ -1,21 +1,21 @@
 <template>
-  <div class="fullscreen-report-overlay">
-    <div class="report-page-container">
-      <div class="page-header">
-        <span class="title">绩效考核统计视窗</span>
-        <div class="header-right">
-          <span v-if="crawlDate" class="crawl-date">抓取时间: {{ crawlDate }}</span>
-          <button class="close-btn" @click="$emit('close')">关闭</button>
+  <div class="fixed inset-0 w-screen h-screen z-[2147483647] bg-[#1e293b] overflow-hidden">
+    <div class="h-screen py-[30px] px-[40px] box-border flex flex-col">
+      <div class="mb-[30px] pb-[15px] border-0 border-b border-solid border-slate-700 flex justify-between items-center shrink-0">
+        <span class="text-slate-50 font-semibold text-[20px] tracking-[1px]">绩效考核统计视窗</span>
+        <div class="flex items-center gap-5">
+          <span v-if="crawlDate" class="text-slate-400 text-[13px] bg-slate-700/40 py-1.5 px-3 rounded border border-dashed border-slate-600 tracking-[0.5px]">抓取时间: {{ crawlDate }}</span>
+          <button class="bg-transparent border border-solid border-slate-600 rounded text-slate-400 py-1.5 px-3 text-[14px] cursor-pointer appearance-none outline-none transition-all duration-200 hover:bg-slate-700 hover:text-slate-50 hover:border-slate-50" @click="$emit('close')">关闭</button>
         </div>
       </div>
 
-      <div class="dashboard-layout">
-        <div class="table-section">
-          <div class="table-wrapper">
+      <div class="flex flex-1 gap-[50px] items-stretch min-h-0">
+        <div class="flex-[1.5] flex flex-col overflow-y-auto pr-[15px] scrollbar-custom">
+          <div class="flex flex-col gap-[50px] pb-[30px]">
 
-            <div class="native-table-container" @mouseenter="activeChartType = 'factory'">
-              <h3 class="table-title">工厂产量(t)</h3>
-              <table class="native-table">
+            <div class="w-full transition-colors duration-300 p-2.5 rounded-lg hover:bg-slate-700/40 hover:cursor-default" @mouseenter="activeChartType = 'factory'">
+              <h3 class="text-center text-slate-50 text-[18px] font-bold m-0 mb-[15px] tracking-[1px]">工厂产量(t)</h3>
+              <table class="w-full border-collapse table-fixed bg-transparent text-center align-middle text-[14px] [&_th]:border [&_th]:border-solid [&_th]:border-slate-600 [&_th]:p-[14px_8px] [&_td]:border [&_td]:border-solid [&_td]:border-slate-600 [&_td]:p-[14px_8px] [&_thead_th]:bg-[#1a202c] [&_thead_th]:text-slate-50 [&_thead_th]:font-bold [&_td]:bg-transparent [&_td]:text-[#e2e8f0] [&_tbody_th]:bg-[#2d3748] [&_tbody_th]:text-[#f1f5f9]">
                 <thead>
                   <tr>
                     <th v-for="m in monthNames" :key="'out-h-' + m">{{ m }}</th>
@@ -41,9 +41,9 @@
               </table>
             </div>
 
-            <div class="native-table-container" @mouseenter="activeChartType = 'component'">
-              <h3 class="table-title">深化重量(t)</h3>
-              <table class="native-table">
+            <div class="w-full transition-colors duration-300 p-2.5 rounded-lg hover:bg-slate-700/40 hover:cursor-default" @mouseenter="activeChartType = 'component'">
+              <h3 class="text-center text-slate-50 text-[18px] font-bold m-0 mb-[15px] tracking-[1px]">深化重量(t)</h3>
+              <table class="w-full border-collapse table-fixed bg-transparent text-center align-middle text-[14px] [&_th]:border [&_th]:border-solid [&_th]:border-slate-600 [&_th]:p-[14px_8px] [&_td]:border [&_td]:border-solid [&_td]:border-slate-600 [&_td]:p-[14px_8px] [&_thead_th]:bg-[#1a202c] [&_thead_th]:text-slate-50 [&_thead_th]:font-bold [&_td]:bg-transparent [&_td]:text-[#e2e8f0] [&_tbody_th]:bg-[#2d3748] [&_tbody_th]:text-[#f1f5f9]">
                 <thead>
                   <tr>
                     <th v-for="m in monthNames" :key="'weight-h-' + m">{{ m }}</th>
@@ -54,9 +54,9 @@
                     <td v-for="(v, index) in compMonthValues" :key="'weight-v-' + index">{{ v }}</td>
                   </tr>
                   <tr>
-                    <th colspan="4" class="diagonal-cell">
-                      <span class="top-right">时间</span>
-                      <span class="bottom-left">姓名</span>
+                    <th colspan="4" class="diagonal-cell h-[50px] !p-0">
+                      <span class="absolute top-2 right-[15px] text-[14px] font-bold">时间</span>
+                      <span class="absolute bottom-2 left-[15px] text-[14px] font-bold">姓名</span>
                     </th>
                     <th colspan="4">{{ personnelMatrix.prevMonth }}</th>
                     <th colspan="4">{{ personnelMatrix.currMonth }}</th>
@@ -67,7 +67,7 @@
                     <td colspan="4">{{ person.currWeight }}</td>
                   </tr>
                   <tr v-if="personnelMatrix.list.length === 0">
-                    <td colspan="12" style="color: #64748b; font-style: italic;">暂未在偏好设置中配置深化人员名单...</td>
+                    <td colspan="12" class="!text-[#64748b] italic">暂未在偏好设置中配置深化人员名单...</td>
                   </tr>
                 </tbody>
               </table>
@@ -76,7 +76,7 @@
           </div>
         </div>
 
-        <div class="chart-section">
+        <div class="flex-1 flex flex-col">
           <Chart :active-type="activeChartType" :month-names="monthNames" :month-values="currentChartMonthValues"
             :quarter-values="currentChartQuarterValues" :personnel-matrix="personnelMatrix"
             :config="currentChartConfig" />
@@ -87,10 +87,6 @@
 </template>
 
 <script setup lang="ts">
-/**
- * @module PerformanceReport
- * @description 报表视图渲染器。接收顶层下发的聚合载荷，并在 Header 展示爬虫快照时间。
- */
 import { ref, computed, onMounted, nextTick } from 'vue';
 import type { FactoryMonthItem, PersonnelMatrix } from '../../types';
 import Chart from './PerformanceReport/Chart.vue';
@@ -135,11 +131,6 @@ onMounted(async () => {
   processData();
 });
 
-/**
- * @method processData
- * @description 报表数据预处理器。将泛用 JSON 节点扁平化映射至一维坐标轴矩阵，确保图表库能够稳定渲染。
- * @returns {void}
- */
 const processData = () => {
   const tempMonthNames: string[] = [];
   const tempFactoryMonths: number[] = [];
@@ -182,198 +173,10 @@ const processData = () => {
 </script>
 
 <style scoped>
-.fullscreen-report-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 2147483647;
-  background-color: #1e293b;
-  overflow: hidden;
-}
-
-.report-page-container {
-  height: 100vh;
-  padding: 30px 40px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-.page-header {
-  margin-bottom: 30px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #334155;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.page-header .title {
-  color: #f8fafc;
-  font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 1px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.crawl-date {
-  color: #94a3b8;
-  font-size: 13px;
-  background: rgba(51, 65, 85, 0.4);
-  padding: 6px 12px;
-  border-radius: 4px;
-  border: 1px dashed #475569;
-  letter-spacing: 0.5px;
-}
-
-.close-btn {
-  background: transparent;
-  border: 1px solid #475569;
-  border-radius: 4px;
-  color: #94a3b8;
-  padding: 6px 12px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.close-btn:hover {
-  background: #334155;
-  color: #f8fafc;
-  border-color: #f8fafc;
-}
-
-.dashboard-layout {
-  display: flex;
-  flex: 1;
-  gap: 50px;
-  align-items: stretch;
-  min-height: 0;
-}
-
-.table-section {
-  flex: 1.5;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding-right: 15px;
-}
-
-.table-section::-webkit-scrollbar {
-  width: 6px;
-}
-
-.table-section::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.table-section::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
-}
-
-.table-section::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
-
-.table-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 50px;
-  padding-bottom: 30px;
-}
-
-.native-table-container {
-  width: 100%;
-  transition: background-color 0.3s;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.native-table-container:hover {
-  background-color: rgba(51, 65, 85, 0.4);
-  cursor: default;
-}
-
-.table-title {
-  text-align: center;
-  color: #f8fafc;
-  font-size: 18px;
-  font-weight: bold;
-  margin: 0 0 15px 0;
-  letter-spacing: 1px;
-}
-
-.native-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  background-color: transparent;
-}
-
-.native-table th,
-.native-table td {
-  border: 1px solid #475569;
-  text-align: center;
-  vertical-align: middle;
-  padding: 14px 8px;
-  font-size: 14px;
-}
-
-.native-table th {
-  background-color: #1a202c;
-  color: #f8fafc;
-  font-weight: bold;
-}
-
-.native-table td {
-  background-color: transparent;
-  color: #e2e8f0;
-}
-
-.native-table tbody th {
-  background-color: #2d3748;
-  color: #f1f5f9;
-}
-
-.chart-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .diagonal-cell {
   position: relative;
   background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cline x1='0' y1='0' x2='100%25' y2='100%25' stroke='%23475569' stroke-width='1'/%3E%3C/svg%3E") no-repeat center center;
   background-size: 100% 100%;
-  height: 50px;
-  padding: 0 !important;
   box-sizing: border-box;
-}
-
-.diagonal-cell .top-right {
-  position: absolute;
-  top: 8px;
-  right: 15px;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.diagonal-cell .bottom-left {
-  position: absolute;
-  bottom: 8px;
-  left: 15px;
-  font-size: 14px;
-  font-weight: bold;
 }
 </style>
