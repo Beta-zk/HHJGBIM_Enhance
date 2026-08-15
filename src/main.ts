@@ -2,6 +2,7 @@ import { NetworkHook } from './core/NetworkHook';
 import { authService } from './services/AuthService';
 import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
 import { ProductionIntegrationBigScreenEnhance } from './core/ProductionIntegrationBigScreenEnhance';
+import { BarcodePrintEnhance } from './core/BarcodePrintEnhance';
 import { settings } from './config/settings';
 import { createApp } from 'vue';
 import App from './view/App.vue';
@@ -24,6 +25,10 @@ import App from './view/App.vue';
     
     if (userConfig.enableProductionBigScreen) {
         new ProductionIntegrationBigScreenEnhance().init();
+    }
+
+    if (userConfig.enableBarcodePrintEnhance) {
+        new BarcodePrintEnhance().init();
     }
     
     console.log('[Core] 增强核心引擎装载完毕');

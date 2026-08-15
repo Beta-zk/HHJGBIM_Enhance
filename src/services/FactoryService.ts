@@ -2,6 +2,7 @@ import { API_URLS } from '../config/constants';
 import { GMHttpClient } from '../core/GMHttpClient';
 import { authService } from './AuthService';
 import { settings } from '../config/settings';
+import { systemService } from './SystemService';
 
 /**
  * @class FactoryService
@@ -22,10 +23,15 @@ class FactoryService {
         const payload = { year: targetYear };
 
         try {
-            const localData = await this.fetchLocalFactoryOutput(payload, 3000);
+            const pingOk = await systemService.ping().catch(() => null);
             
-            if (localData && Object.keys(localData).length > 0) {
-                return localData;
+            if (pingOk) {
+                const localData = await this.fetchLocalFactoryOutput(payload, 3000);
+                if (localData && Object.keys(localData).length > 0) {
+                    return localData;
+                }
+            } else {
+                console.warn('[Service] Ping 探活未响应，跳过本地链路直接降级');
             }
         } catch (error) {
             console.warn('[Service] 本地链路异常，触发降级策略: FactoryOutput');

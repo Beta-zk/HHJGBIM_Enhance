@@ -6,8 +6,8 @@ import { NetworkHook } from '../core/NetworkHook';
  */
 class AuthService {
     public dynamicHeaders: Record<string, string> = {
-        "Content-Type": "application/json; charset=utf-8",
-        "Accept": "application/json, text/plain, */*"
+        "content-type": "application/json",
+        "priority": "u=1, i"
     };
     
     private readonly AUTH_STORAGE_KEY = 'HHJG_BIM_AUTH_TOKEN';
@@ -18,8 +18,7 @@ class AuthService {
 
     private readonly SESSION_HEADERS = new Set([
         'authorization',
-        'last_working_object_id',
-        'priority'
+        'last_working_object_id'
     ]);
 
     constructor() {
@@ -41,7 +40,7 @@ class AuthService {
 
     /**
      * @method initObserver
-     * @description 将凭证更新策略桥接至网络嗅探管线，实现被动式授权更新。
+     * @description 将凭证更新策略桥接至网络嗅探管线，实现被动式授权与对象标识的动态更新。
      */
     public initObserver(): void {
         NetworkHook.getInstance().registerHeaderSniffer((key, value) => {
@@ -63,7 +62,10 @@ class AuthService {
             }
             return;
         }
-        this.dynamicHeaders[lowerKey] = value;
+
+        if (lowerKey === 'last_working_object_id') {
+            this.dynamicHeaders['last_working_object_id'] = value;
+        }
     }
 
     /**
@@ -93,6 +95,7 @@ class AuthService {
 
     public clearAuth(): void {
         delete this.dynamicHeaders['authorization'];
+        delete this.dynamicHeaders['last_working_object_id'];
         this.isSessionTokenReady = false;
         localStorage.removeItem(this.AUTH_STORAGE_KEY);
         localStorage.removeItem(this.AUTH_TIME_KEY);

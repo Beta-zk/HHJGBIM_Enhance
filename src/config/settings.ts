@@ -5,6 +5,7 @@
 export interface IUserSettings {
     enableProductionBigScreen: boolean;
     enableProjectInventory: boolean;
+    enableBarcodePrintEnhance: boolean;
     crawlerDomain: string;
     deepeningPersonnel?: string;
 }
@@ -12,6 +13,7 @@ export interface IUserSettings {
 const DEFAULT_SETTINGS: IUserSettings = {
     enableProductionBigScreen: true,
     enableProjectInventory: true,
+    enableBarcodePrintEnhance: true,
     crawlerDomain: 'http://127.0.0.1:8000',
     deepeningPersonnel: ''
 };

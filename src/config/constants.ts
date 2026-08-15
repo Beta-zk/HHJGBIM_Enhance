@@ -15,5 +15,7 @@ export const API_URLS = {
     LOCAL_SYSTEM_INT_PATH: '/system/int',
     LOCAL_SYSTEM_PROGRESS_PATH: '/system/progress',
     LOCAL_SYSTEM_REPORT_PATH: '/system/report',
-    LOCAL_FACTORY_YEAR_OUTPUT_PATH: '/factory/yearOutput'
+    LOCAL_FACTORY_YEAR_OUTPUT_PATH: '/factory/yearOutput',
+    GET_COMP_SCHDULING_PAGE_LIST: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingPageList',
+    GET_COMP_SCHDULING_INFO_DETAIL: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingInfoDetail'
 };

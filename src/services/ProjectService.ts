@@ -2,6 +2,7 @@ import { API_URLS } from "../config/constants";
 import { GMHttpClient } from "../core/GMHttpClient";
 import { authService } from "./AuthService";
 import { settings } from "../config/settings";
+import { systemService } from "./SystemService";
 
 /**
  * @class ProjectService
@@ -40,9 +41,15 @@ class ProjectService {
 
   private async executeFetchStrategy(): Promise<any> {
     try {
-      const localData = await this.fetchLocalInfo(3000);
-      if (localData && Array.isArray(localData) && localData.length > 0) {
-        return { Data: localData };
+      const pingOk = await systemService.ping().catch(() => null);
+      
+      if (pingOk) {
+          const localData = await this.fetchLocalInfo(3000);
+          if (localData && Array.isArray(localData) && localData.length > 0) {
+            return { Data: localData };
+          }
+      } else {
+          console.warn("[Service] Ping 探活未响应，直接执行宿主云端降级");
       }
     } catch (error) {
       console.warn("[Service] 链路降级: PLM_ProjectEntities");

@@ -29,7 +29,7 @@ class SystemService {
 
     /**
      * @method ping
-     * @description 派发 RPC 探活信号，验证远程资源就绪态。
+     * @description 派发 RPC 探活信号，验证远程资源就绪态。内建 3000ms 强制超时拦截。
      * @param {Record<string, any>} [params={}] 
      * @returns {Promise<any>}
      */
@@ -37,7 +37,17 @@ class SystemService {
         await authService.waitForToken();
         
         const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_SYSTEM_PING_PATH}`;
-        const response = await GMHttpClient.post(url, params);
+        
+        const timeoutPromise = new Promise((resolve) => {
+            setTimeout(() => {
+                console.warn('[SystemService] Ping 探活超时 (3000ms) 熔断');
+                resolve(null);
+            }, 3000);
+        });
+
+        const requestPromise = GMHttpClient.post(url, params);
+        
+        const response = await Promise.race([requestPromise, timeoutPromise]);
         
         if (!response) {
             return null;
