@@ -13,6 +13,7 @@ export const API_URLS = {
     LOCAL_COMPONENT_MONTH_WEIGHT_PATH: '/component/monthWeight',
     LOCAL_SYSTEM_PING_PATH: '/system/ping',
     LOCAL_SYSTEM_INT_PATH: '/system/int',
+    LOCAL_SYSTEM_PROGRESS_PATH: '/system/progress',
     LOCAL_SYSTEM_REPORT_PATH: '/system/report',
     LOCAL_FACTORY_YEAR_OUTPUT_PATH: '/factory/yearOutput'
 };

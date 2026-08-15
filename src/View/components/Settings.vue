@@ -46,16 +46,36 @@
                         <p class="item-desc">配置后才可使用爬虫服务。</p>
                     </div>
                     <div class="crawler-input-group">
-                        <span class="ping-indicator"
+                        
+                        <!-- 状态文本遮罩层：结合Vue监听器动态触发跑马灯 -->
+                        <div class="status-marquee-wrapper" v-if="isInitializing || progressValue > 0" ref="marqueeWrapperRef">
+                            <span class="highlight-step" ref="marqueeTextRef" :class="{ 'is-scrolling': isOverflowing }">
+                                {{ currentStep }}
+                            </span>
+                        </div>
+
+                        <!-- 进度展示区 -->
+                        <div class="progress-wrapper" v-if="isInitializing || progressValue > 0" :title="currentStep">
+                            <svg class="progress-ring" width="28" height="28">
+                                <circle class="progress-ring-bg" stroke="#334155" stroke-width="2.5" fill="transparent" r="12" cx="14" cy="14" />
+                                <circle class="progress-ring-circle" stroke="#38bdf8" stroke-width="2.5" fill="transparent" r="12" cx="14" cy="14"
+                                    :style="{ strokeDasharray: '75.4', strokeDashoffset: 75.4 - (progressValue / 100) * 75.4 }" />
+                            </svg>
+                            <span class="progress-text">{{ progressValue }}%</span>
+                        </div>
+                        
+                        <!-- 健康度探测位 -->
+                        <span class="ping-indicator" v-else
                             :title="pingStatus === 'success' ? '连通正常' : (pingStatus === 'error' ? '失联或跨域拒绝' : (pingStatus === 'loading' ? '检测中...' : '待检测'))">
-                            {{ pingStatus === 'success' ? '✅' : (pingStatus === 'error' ? '❌' : (pingStatus ===
-                                'loading' ? '⏳' : '⚪')) }}
+                            {{ pingStatus === 'success' ? '✅' : (pingStatus === 'error' ? '❌' : (pingStatus === 'loading' ? '⏳' : '⚪')) }}
                         </span>
+
                         <input type="text" v-model="formState.crawlerDomain" @blur="checkPing" class="crawler-input"
-                            placeholder="例如: http://127.0.0.1:8000" />
+                            placeholder="例如: http://127.0.0.1:8000" :disabled="isInitializing" />
+                            
                         <button class="init-btn" @click="triggerInit"
                             :disabled="isInitializing || pingStatus !== 'success'">
-                            <span class="action-icon" :class="{ 'spin': isInitializing }">🔄</span>
+                            <span class="action-icon">🔄</span>
                         </button>
                     </div>
                 </div>
@@ -66,14 +86,18 @@
             </div>
 
             <div class="settings-footer">
-                <button class="save-btn" @click="handleSave">保存并应用</button>
+                <button class="save-btn" @click="handleSave" :disabled="isInitializing">保存并应用</button>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, ref } from 'vue';
+/**
+ * @module SystemSettings
+ * @description 应用状态集线器。深度集成了基于任务凭证(TaskId)的异步爬虫轮询协议及UI级跑马灯防抖控制。
+ */
+import { reactive, onMounted, ref, onUnmounted, watch, nextTick } from 'vue';
 import { settings, type IUserSettings } from '../../config/settings';
 import { API_URLS } from '../../config/constants';
 import { GMHttpClient } from '../../core/GMHttpClient';
@@ -90,6 +114,14 @@ const formState = reactive<IUserSettings>({
 
 const pingStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle');
 const isInitializing = ref(false);
+const progressValue = ref(0);
+const currentStep = ref('');
+let pollTimer: any = null;
+
+// 跑马灯状态观测节点
+const marqueeWrapperRef = ref<HTMLElement | null>(null);
+const marqueeTextRef = ref<HTMLElement | null>(null);
+const isOverflowing = ref(false);
 
 onMounted(() => {
     const currentConfig = settings.get();
@@ -98,10 +130,38 @@ onMounted(() => {
     formState.crawlerDomain = currentConfig.crawlerDomain;
     formState.deepeningPersonnel = currentConfig.deepeningPersonnel || '';
 
-    setTimeout(() => {
-        checkPing();
-    }, 100);
+    setTimeout(() => { checkPing(); }, 100);
 });
+
+onUnmounted(() => {
+    if (pollTimer) clearInterval(pollTimer);
+});
+
+/**
+ * @method checkTextOverflow
+ * @description 游标文本溢出测算。自动注入位移偏差变量与动态运动速率，以适配不同长度的提示文本。
+ */
+const checkTextOverflow = async () => {
+    await nextTick();
+    if (marqueeWrapperRef.value && marqueeTextRef.value) {
+        const wrapperWidth = marqueeWrapperRef.value.clientWidth;
+        const textWidth = marqueeTextRef.value.scrollWidth;
+        
+        if (textWidth > wrapperWidth) {
+            isOverflowing.value = true;
+            // 预留 15px 呼吸空间，避免文字边缘贴合过紧
+            const dist = textWidth - wrapperWidth + 15;
+            marqueeTextRef.value.style.setProperty('--scroll-dist', `-${dist}px`);
+            // 根据溢出长度计算恒定滚动速率 (约为每秒30px)
+            const duration = Math.max(2, dist / 30);
+            marqueeTextRef.value.style.setProperty('--scroll-duration', `${duration}s`);
+        } else {
+            isOverflowing.value = false;
+        }
+    }
+};
+
+watch(currentStep, checkTextOverflow);
 
 const checkPing = async () => {
     if (!formState.crawlerDomain) {
@@ -124,23 +184,69 @@ const triggerInit = async () => {
         showToast('请先填写爬虫服务地址', false);
         return;
     }
+    
     isInitializing.value = true;
+    progressValue.value = 0;
+    currentStep.value = '请求建立任务...';
+    
     try {
         const targetUrl = `${formState.crawlerDomain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_INT_PATH}`;
         const res = await GMHttpClient.post(targetUrl, {});
-        if (res) {
-            showToast('系统初始化指令已成功下发', true);
+        
+        if (res && res.status === 'success' && res.taskId) {
+            showToast('初始化任务已进入后台队列', true);
+            startPolling(res.taskId);
         } else {
-            showToast('系统初始化失败，请检查爬虫服务状态', false);
+            showToast('系统初始化指令投递失败，未返回任务流凭证', false);
+            isInitializing.value = false;
         }
     } catch (error) {
         showToast('系统初始化通讯异常', false);
-    } finally {
         isInitializing.value = false;
     }
 };
 
-const handleClose = () => { emit('close'); };
+const startPolling = (taskId: string) => {
+    if (pollTimer) clearInterval(pollTimer);
+    
+    pollTimer = setInterval(async () => {
+        try {
+            const progressUrl = `${formState.crawlerDomain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_PROGRESS_PATH}`;
+            const res = await GMHttpClient.post(progressUrl, { taskId });
+            
+            if (res) {
+                progressValue.value = res.progress || 0;
+                currentStep.value = res.current_step || '';
+
+                if (res.status === 'completed') {
+                    clearInterval(pollTimer);
+                    isInitializing.value = false;
+                    showToast('恭喜，后台全量爬虫任务已同步完成！', true);
+                    
+                    setTimeout(() => {
+                        progressValue.value = 0;
+                        currentStep.value = '';
+                    }, 4000);
+                } else if (res.status === 'error') {
+                    clearInterval(pollTimer);
+                    isInitializing.value = false;
+                    showToast(`任务崩溃中止: ${res.current_step}`, false);
+                }
+            }
+        } catch (error) {
+            clearInterval(pollTimer);
+            isInitializing.value = false;
+            showToast('无法获取实时进度，请求断开', false);
+        }
+    }, 1500);
+};
+
+const handleClose = () => { 
+    if (isInitializing.value) {
+        showToast('后台任务仍在运行中，设置中心仅执行隐藏操作。', true);
+    }
+    emit('close'); 
+};
 
 const handleSave = () => {
     settings.update({
@@ -265,6 +371,34 @@ const handleSave = () => {
     line-height: 1.4;
 }
 
+/* --- 新增：跑马灯容器与动画逻辑 --- */
+.status-marquee-wrapper {
+    max-width: 200px;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.highlight-step {
+    color: #38bdf8;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.is-scrolling {
+    /* 注入 50ms (0.05s) 延迟，首尾停留阅读 */
+    animation: text-marquee var(--scroll-duration, 3s) linear 0.05s infinite;
+}
+
+@keyframes text-marquee {
+    0%, 15% { transform: translateX(0); }
+    85%, 100% { transform: translateX(var(--scroll-dist)); }
+}
+/* ---------------------------------- */
+
 .crawler-input-group {
     display: flex;
     align-items: center;
@@ -278,6 +412,32 @@ const handleSave = () => {
     text-align: center;
 }
 
+.progress-wrapper {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+    transition: stroke-dashoffset 0.4s ease-in-out;
+}
+
+.progress-text {
+    position: absolute;
+    font-size: 9px;
+    color: #f8fafc;
+    font-weight: bold;
+    user-select: none;
+}
+
 .crawler-input {
     background: #1e293b;
     border: 1px solid #475569;
@@ -286,10 +446,16 @@ const handleSave = () => {
     padding: 8px 12px;
     outline: none;
     transition: border-color 0.2s;
+    width: 190px;
 }
 
 .crawler-input:focus {
     border-color: #38bdf8;
+}
+
+.crawler-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .init-btn {
@@ -303,11 +469,18 @@ const handleSave = () => {
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .init-btn:hover:not(:disabled) {
     background: #475569;
     border-color: #38bdf8;
+}
+
+.init-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(100%);
 }
 
 .switch {
@@ -383,7 +556,12 @@ input:checked+.slider:before {
     transition: background 0.2s;
 }
 
-.save-btn:hover {
+.save-btn:hover:not(:disabled) {
     background: #0369a1;
+}
+
+.save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 </style>

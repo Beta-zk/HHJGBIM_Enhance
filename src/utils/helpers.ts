@@ -14,8 +14,9 @@ export function showToast(msg: string, isSuccess: boolean = true): void {
     const bgColor = isSuccess ? 'rgba(16, 185, 129, 0.92)' : 'rgba(239, 68, 68, 0.92)';
     const shadowColor = isSuccess ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
 
+    // 修改定位：从 bottom/right 变更为 top: 20% / left: 50%
     toast.style.cssText = `
-        position: fixed; bottom: 28px; right: 28px;
+        position: fixed; top: 20%; left: 50%;
         display: flex; align-items: center; gap: 10px;
         background: ${bgColor}; color: #ffffff;
         padding: 12px 20px; border-radius: 12px;
@@ -23,7 +24,7 @@ export function showToast(msg: string, isSuccess: boolean = true): void {
         box-shadow: 0 10px 25px -5px ${shadowColor}, 0 8px 10px -6px rgba(0,0,0,0.1);
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         z-index: 2147483647; pointer-events: none;
-        opacity: 0; transform: translateY(16px) scale(0.95);
+        opacity: 0; transform: translate(-50%, -16px) scale(0.95);
         transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     `;
 
@@ -41,14 +42,16 @@ export function showToast(msg: string, isSuccess: boolean = true): void {
         if (document.body) {
             document.body.appendChild(toast);
             
+            // 进场动画：X轴锁定-50%保持居中，Y轴归零
             requestAnimationFrame(() => {
                 toast.style.opacity = '1';
-                toast.style.transform = 'translateY(0) scale(1)';
+                toast.style.transform = 'translate(-50%, 0) scale(1)';
             });
 
+            // 退场动画：向上轻微偏移并缩小
             setTimeout(() => {
                 toast.style.opacity = '0';
-                toast.style.transform = 'translateY(10px) scale(0.98)';
+                toast.style.transform = 'translate(-50%, -16px) scale(0.98)';
                 setTimeout(() => toast.remove(), 350);
             }, 3000);
         } else {
