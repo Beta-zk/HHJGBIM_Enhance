@@ -18,6 +18,16 @@ export interface ISchdulingOptionalParams {
 }
 
 /**
+ * @interface ISchdulingResult
+ * @description 排产综合数据契约，集成构件矩阵与所属项目溯源凭证。
+ */
+export interface ISchdulingResult {
+    compCodes: string[];
+    projectName: string;
+    projectId: string;
+}
+
+/**
  * @class SchdulingService
  * @description 生产排产业务聚合引擎。
  */
@@ -25,15 +35,15 @@ class SchdulingService {
     
     /**
      * @method getCompCodesBySchdulingCode
-     * @description 通过排产单号，利用多态请求级联获取关联的构件编码数组。
+     * @description 通过排产单号，利用多态请求级联获取关联的构件编码数组及项目源信息。
      * @param {string} schdulingCode 非空查询标识
      * @param {ISchdulingOptionalParams} [optionalParams={}] 选填搜索字段
-     * @returns {Promise<string[]>}
+     * @returns {Promise<ISchdulingResult>}
      */
     public async getCompCodesBySchdulingCode(
         schdulingCode: string, 
         optionalParams: ISchdulingOptionalParams = {}
-    ): Promise<string[]> {
+    ): Promise<ISchdulingResult> {
         if (!schdulingCode) {
             throw new Error('[SchdulingService] Schduling_Code 不允许为空');
         }
@@ -63,7 +73,7 @@ class SchdulingService {
 
         const dataArray = pageRes.Data.Data;
         if (dataArray.length === 0) {
-            return [];
+            return { compCodes: [], projectName: '', projectId: '' };
         }
 
         if (dataArray.length > 1) {
@@ -85,9 +95,20 @@ class SchdulingService {
             throw new Error('[SchdulingService] 详情提取请求失败或映射域结构失效');
         }
 
-        return detailRes.Data.Schduling_Comps
+        const comps = detailRes.Data.Schduling_Comps;
+        const compCodes = comps
             .map((comp: any) => comp.Comp_Code)
             .filter((code: any) => typeof code === 'string' && code.trim() !== '');
+
+        const firstComp = comps.length > 0 ? comps[0] : {};
+        const projectName = firstComp.Project_Name || '';
+        const projectId = firstComp.Project_Id || '';
+
+        return {
+            compCodes,
+            projectName,
+            projectId
+        };
     }
 }
 

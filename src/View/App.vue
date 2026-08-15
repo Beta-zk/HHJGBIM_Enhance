@@ -14,7 +14,7 @@
           ⚙️ 偏好设置
         </button>
         <button class="action-btn placeholder" disabled>
-          🚧 预留功能模块
+          🚧 预留
         </button>
       </div>
     </div>
@@ -29,7 +29,7 @@
 <script setup lang="ts">
 /**
  * @module AppRoot
- * @description 顶层视图控制器。协调侧边栏动画状态，并作为中心枢纽向下级图表与设置组件下发 Props。
+ * @description 顶层视图控制器。升级为全链路调度枢纽，基于首发探活结果彻底阻断离线状态下的无效网络发包。
  */
 import { ref } from 'vue';
 import { factoryService } from '../services/FactoryService';
@@ -53,12 +53,6 @@ const personnelReportData = ref<PersonnelMatrix>({ currMonth: '', prevMonth: '',
 
 const togglePanel = () => { isExpanded.value = !isExpanded.value; };
 
-/**
- * @method formatDateTime
- * @description 时间清洗器。将非标准的 ISO 串清洗为严格的年-月-日 时-分-秒格式。
- * @param {string} isoStr 原始时间戳
- * @returns {string} 标准化输出
- */
 const formatDateTime = (isoStr: string): string => {
   if (!isoStr) return '';
   const d = new Date(isoStr);
@@ -69,8 +63,7 @@ const formatDateTime = (isoStr: string): string => {
 
 /**
  * @method handleOpenReport
- * @description 异步聚合工厂产量、深化组件权重数据及底层系统报告快照，实施多接口并发请求与异常熔断保护。
- * @returns {Promise<void>}
+ * @description 报表展开事件。执行首发探活，控制后置接口并发执行或直接熔断屏蔽。
  */
 const handleOpenReport = async () => {
   isLoading.value = true;
@@ -85,24 +78,37 @@ const handleOpenReport = async () => {
       ? userConfig.deepeningPersonnel.split(',').map((s: string) => s.trim()).filter(Boolean)
       : [];
 
+    // 作为第一调用方发起探活
+    const pingRes = await systemService.ping().catch(() => null);
+    const isLocalReady = !!pingRes;
+
+    if (!isLocalReady) {
+        console.warn('[UI] 爬虫微服务离线');
+    }
+
+    // 根据探活结果进行精确的依赖剪枝
     const [factoryRes, compRes, sysReportRes] = await Promise.all([
-      factoryService.fetchMonthlyOutput().catch(() => null),
-      componentService.getYearWeight().catch(() => null),
-      systemService.submitSystemReport().catch(() => null)
+      factoryService.fetchMonthlyOutput(undefined, isLocalReady).catch(() => null),
+      isLocalReady ? componentService.getYearWeight().catch(() => null) : Promise.resolve(null),
+      isLocalReady ? systemService.submitSystemReport().catch(() => null) : Promise.resolve(null)
     ]);
 
     const extractedPersonnelData: PersonnelWeight[] = [];
-    for (const person of personnelList) {
-      const [currData, prevData] = await Promise.all([
-        componentService.getMonthWeight(currMonthStr, person).catch(() => null),
-        componentService.getMonthWeight(prevMonthStr, person).catch(() => null)
-      ]);
+    
+    // 若微服务离线，直接放弃人员绩效遍历，消除遍历引发的时延叠加
+    if (isLocalReady) {
+        for (const person of personnelList) {
+          const [currData, prevData] = await Promise.all([
+            componentService.getMonthWeight(currMonthStr, person).catch(() => null),
+            componentService.getMonthWeight(prevMonthStr, person).catch(() => null)
+          ]);
 
-      extractedPersonnelData.push({
-        name: person,
-        currWeight: Number(((currData?.GrossTotal || 0) / 1000).toFixed(3)),
-        prevWeight: Number(((prevData?.GrossTotal || 0) / 1000).toFixed(3))
-      });
+          extractedPersonnelData.push({
+            name: person,
+            currWeight: Number(((currData?.GrossTotal || 0) / 1000).toFixed(3)),
+            prevWeight: Number(((prevData?.GrossTotal || 0) / 1000).toFixed(3))
+          });
+        }
     }
 
     let validFactoryData = null;
@@ -150,6 +156,7 @@ const handleOpenReport = async () => {
 </script>
 
 <style scoped>
+/* 原样式代码保持不变，无损结构 */
 .hhjgbim-sidebar {
   position: fixed;
   top: 50%;

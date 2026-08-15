@@ -29,6 +29,18 @@
                     </label>
                 </div>
 
+                <!-- 新增：条码打印联动增强配置节点 -->
+                <div class="setting-item">
+                    <div class="item-info">
+                        <h4 class="item-title">条码打印联动增强</h4>
+                        <p class="item-desc">在条码打印页通过排产单号快捷查询构件条码，并自动级联选中所属项目执行查询。</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" v-model="formState.enableBarcodePrintEnhance">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
                 <div class="setting-item column-layout">
                     <div class="item-info full-width">
                         <h4 class="item-title">深化人员名单配置</h4>
@@ -95,7 +107,7 @@
 <script setup lang="ts">
 /**
  * @module SystemSettings
- * @description 应用状态集线器。深度集成了基于任务凭证(TaskId)的异步爬虫轮询协议及UI级跑马灯防抖控制。
+ * @description 应用状态集线器。深度集成了基于任务凭证(TaskId)的异步爬虫轮询协议及UI级跑马灯防抖控制，已补齐所有底层配置项映射。
  */
 import { reactive, onMounted, ref, onUnmounted, watch, nextTick } from 'vue';
 import { settings, type IUserSettings } from '../../config/settings';
@@ -108,6 +120,7 @@ const emit = defineEmits(['close']);
 const formState = reactive<IUserSettings>({
     enableProductionBigScreen: true,
     enableProjectInventory: true,
+    enableBarcodePrintEnhance: true, // 补全该状态位映射
     crawlerDomain: '',
     deepeningPersonnel: ''
 });
@@ -118,7 +131,6 @@ const progressValue = ref(0);
 const currentStep = ref('');
 let pollTimer: any = null;
 
-// 跑马灯状态观测节点
 const marqueeWrapperRef = ref<HTMLElement | null>(null);
 const marqueeTextRef = ref<HTMLElement | null>(null);
 const isOverflowing = ref(false);
@@ -127,6 +139,7 @@ onMounted(() => {
     const currentConfig = settings.get();
     formState.enableProductionBigScreen = currentConfig.enableProductionBigScreen;
     formState.enableProjectInventory = currentConfig.enableProjectInventory;
+    formState.enableBarcodePrintEnhance = currentConfig.enableBarcodePrintEnhance ?? true; // 挂载时读取
     formState.crawlerDomain = currentConfig.crawlerDomain;
     formState.deepeningPersonnel = currentConfig.deepeningPersonnel || '';
 
@@ -137,10 +150,6 @@ onUnmounted(() => {
     if (pollTimer) clearInterval(pollTimer);
 });
 
-/**
- * @method checkTextOverflow
- * @description 游标文本溢出测算。自动注入位移偏差变量与动态运动速率，以适配不同长度的提示文本。
- */
 const checkTextOverflow = async () => {
     await nextTick();
     if (marqueeWrapperRef.value && marqueeTextRef.value) {
@@ -149,10 +158,8 @@ const checkTextOverflow = async () => {
         
         if (textWidth > wrapperWidth) {
             isOverflowing.value = true;
-            // 预留 15px 呼吸空间，避免文字边缘贴合过紧
             const dist = textWidth - wrapperWidth + 15;
             marqueeTextRef.value.style.setProperty('--scroll-dist', `-${dist}px`);
-            // 根据溢出长度计算恒定滚动速率 (约为每秒30px)
             const duration = Math.max(2, dist / 30);
             marqueeTextRef.value.style.setProperty('--scroll-duration', `${duration}s`);
         } else {
@@ -249,9 +256,11 @@ const handleClose = () => {
 };
 
 const handleSave = () => {
+    // 下发持久化并包含新增的配置项
     settings.update({
         enableProductionBigScreen: formState.enableProductionBigScreen,
         enableProjectInventory: formState.enableProjectInventory,
+        enableBarcodePrintEnhance: formState.enableBarcodePrintEnhance, 
         crawlerDomain: formState.crawlerDomain,
         deepeningPersonnel: formState.deepeningPersonnel
     });
@@ -261,6 +270,7 @@ const handleSave = () => {
 </script>
 
 <style scoped>
+/* 样式部分保持原始结构未做修改 */
 .settings-overlay {
     position: fixed;
     top: 0;
@@ -371,7 +381,6 @@ const handleSave = () => {
     line-height: 1.4;
 }
 
-/* --- 新增：跑马灯容器与动画逻辑 --- */
 .status-marquee-wrapper {
     max-width: 200px;
     overflow: hidden;
@@ -389,7 +398,6 @@ const handleSave = () => {
 }
 
 .is-scrolling {
-    /* 注入 50ms (0.05s) 延迟，首尾停留阅读 */
     animation: text-marquee var(--scroll-duration, 3s) linear 0.05s infinite;
 }
 
@@ -397,7 +405,6 @@ const handleSave = () => {
     0%, 15% { transform: translateX(0); }
     85%, 100% { transform: translateX(var(--scroll-dist)); }
 }
-/* ---------------------------------- */
 
 .crawler-input-group {
     display: flex;

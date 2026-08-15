@@ -1,13 +1,16 @@
 import { API_URLS } from '../config/constants';
 import { projectService } from '../services/ProjectService'; 
+import { systemService } from '../services/SystemService';
 import { BimProjectItem, PlmEntityItem } from '../types';
 import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProjectInventoryEnhance
- * @description 业务数据重组中间件。结合网络挂钩的前置依赖处理特性（beforeRequest），实现异构系统数据集的联合映射与字段填充。
+ * @description 业务数据重组中间件。结合网络挂钩的前置依赖处理特性，基于预热探活标识决定分支走向。
  */
 export class ProjectInventoryEnhance {
+    private isCrawlerReady: boolean = false;
+
     private injectTargetData(warehouseJson: any, plmJson: any): any {
         try {
             if (!plmJson || !warehouseJson) return warehouseJson;
@@ -45,9 +48,16 @@ export class ProjectInventoryEnhance {
 
     /**
      * @method init
-     * @description 初始化清洗管线，注册仓储数据的响应拦截器及 PLM 字典的前置拉取逻辑。
+     * @description 初始化清洗管线。发起非阻塞探活，消除拦截器的等待时延。
      */
     public init(): void {
+        // 异步预热健康状态，不挂起主线程
+        systemService.ping().then(res => {
+            this.isCrawlerReady = !!res;
+        }).catch(() => {
+            this.isCrawlerReady = false;
+        });
+
         NetworkHook.getInstance().registerResponseInterceptor({
             id: 'INTERCEPTOR_WAREHOUSE_STATS',
             urlMatcher: (url: string) => {
@@ -59,7 +69,8 @@ export class ProjectInventoryEnhance {
                     return false; 
                 }
             },
-            beforeRequest: () => projectService.fetchProjectEntities(),
+            // 利用缓存的就绪态，以 0ms 损耗进行降级路由分发
+            beforeRequest: () => projectService.fetchProjectEntities(this.isCrawlerReady),
             handler: (originalJson: any, prefetchData: any) => {
                 return this.injectTargetData(originalJson, prefetchData);
             }
