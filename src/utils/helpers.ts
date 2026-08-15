@@ -1,38 +1,97 @@
+type ToastType = 'info' | 'success' | 'warning' | 'error';
+
 /**
  * @function showToast
- * @description 游离于框架体系之外的原生级视图反馈渲染器。利用微任务（Microtask）与动画帧进行高优先级样式构建。
- * @param {string} msg 广播载荷
- * @param {boolean} [isSuccess=true] 状态位判决
+ * @description 原生级 Naive UI 同款 Message 提示器
+ * @param {string} msg 提示内容
+ * @param {boolean | ToastType} typeOrStatus 状态（支持布尔值或 'success' | 'error' | 'warning' | 'info'）
+ * @param {number} [duration=3000] 显示时长(ms)
  * @returns {void}
  */
-export function showToast(msg: string, isSuccess: boolean = true): void {
+export function showToast(
+    msg: string, 
+    typeOrStatus: boolean | ToastType = true,
+    duration: number = 3000
+): void {
+    // 兼容原本的 boolean 传参，同时支持更多类型
+    const type: ToastType = typeof typeOrStatus === 'boolean' 
+        ? (typeOrStatus ? 'success' : 'error') 
+        : typeOrStatus;
+
+    // Naive UI 官方配色定义
+    const colorMap: Record<ToastType, { iconColor: string; shadow: string }> = {
+        success: { 
+            iconColor: '#18a058', 
+            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
+        },
+        error: { 
+            iconColor: '#d03050', 
+            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
+        },
+        warning: { 
+            iconColor: '#f0a020', 
+            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
+        },
+        info: { 
+            iconColor: '#2080f0', 
+            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
+        }
+    };
+
+    // Naive UI / Ionicons 图标库同款 SVG
+    const icons: Record<ToastType, string> = {
+        success: `<svg viewBox="0 0 512 512" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192s192-86 192-192z"></path><path d="M352 176L217.6 336L160 272"></path></svg>`,
+        error: `<svg viewBox="0 0 512 512" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192s192-86 192-192z"></path><path d="M320 320L192 192"></path><path d="M192 320l128-128"></path></svg>`,
+        warning: `<svg viewBox="0 0 512 512" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192s192-86 192-192z"></path><path d="M250 160l6 144h-20l6-144h8z"></path><path d="M256 360a16 16 0 1 0 0-32a16 16 0 0 0 0 32z" fill="currentColor"></path></svg>`,
+        info: `<svg viewBox="0 0 512 512" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192s192-86 192-192z"></path><path d="M260 220v140"></path><path d="M240 220h20"></path><path d="M256 160a16 16 0 1 0 0-32a16 16 0 0 0 0 32z" fill="currentColor"></path></svg>`
+    };
+
+    const currentConfig = colorMap[type];
     const toast = document.createElement('div');
-    
-    const successIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
-    const errorIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
 
-    const bgColor = isSuccess ? 'rgba(16, 185, 129, 0.92)' : 'rgba(239, 68, 68, 0.92)';
-    const shadowColor = isSuccess ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
-
-    // 修改定位：从 bottom/right 变更为 top: 20% / left: 50%
+    // Naive UI 浅色主题卡片样式
     toast.style.cssText = `
-        position: fixed; top: 20%; left: 50%;
-        display: flex; align-items: center; gap: 10px;
-        background: ${bgColor}; color: #ffffff;
-        padding: 12px 20px; border-radius: 12px;
-        font-size: 14px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        box-shadow: 0 10px 25px -5px ${shadowColor}, 0 8px 10px -6px rgba(0,0,0,0.1);
-        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        z-index: 2147483647; pointer-events: none;
-        opacity: 0; transform: translate(-50%, -16px) scale(0.95);
-        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        position: fixed;
+        top: 15%;
+        left: 50%;
+        display: inline-flex;
+        align-items: center;
+        box-sizing: border-box;
+        padding: 10px 16px;
+        background-color: #ffffff;
+        color: #333639;
+        font-family: v-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        font-size: 14px;
+        line-height: 1.5;
+        border-radius: 3px;
+        box-shadow: ${currentConfig.shadow};
+        z-index: 2147483647;
+        pointer-events: none;
+        user-select: none;
+        opacity: 0;
+        transform: translate(-50%, -100%);
+        transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     `;
 
+    // 图标容器
     const iconSpan = document.createElement('span');
-    iconSpan.style.display = 'flex';
-    iconSpan.innerHTML = isSuccess ? successIcon : errorIcon;
+    iconSpan.style.cssText = `
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        color: ${currentConfig.iconColor};
+        font-size: 20px;
+        flex-shrink: 0;
+    `;
+    iconSpan.innerHTML = icons[type];
 
+    // 文本容器
     const textSpan = document.createElement('span');
+    textSpan.style.cssText = `
+        display: inline-block;
+        word-break: break-word;
+    `;
     textSpan.textContent = msg;
 
     toast.appendChild(iconSpan);
@@ -41,22 +100,25 @@ export function showToast(msg: string, isSuccess: boolean = true): void {
     const attemptAppend = () => {
         if (document.body) {
             document.body.appendChild(toast);
-            
-            // 进场动画：X轴锁定-50%保持居中，Y轴归零
+
+            // 进场动画：顶部滑入 (Naive UI Transition)
             requestAnimationFrame(() => {
-                toast.style.opacity = '1';
-                toast.style.transform = 'translate(-50%, 0) scale(1)';
+                requestAnimationFrame(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translate(-50%, 0)';
+                });
             });
 
-            // 退场动画：向上轻微偏移并缩小
+            // 退出动画
             setTimeout(() => {
                 toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, -16px) scale(0.98)';
-                setTimeout(() => toast.remove(), 350);
-            }, 3000);
+                toast.style.transform = 'translate(-50%, -100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         } else {
             setTimeout(attemptAppend, 50);
         }
     };
+
     attemptAppend();
 }
