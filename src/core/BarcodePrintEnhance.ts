@@ -13,6 +13,11 @@ export class BarcodePrintEnhance {
      * @description 挂载拦截器，侦测条码模版数据读取行为。
      */
     public init(): void {
+        // ======================== [TEMP FIX START] ========================
+        // 临时 UI 修复：未来官方修复或失效后直接整行删除下方调用与下方私有方法
+        this.applyTemporaryUiFix();
+        // ========================= [TEMP FIX END] =========================
+
         NetworkHook.getInstance().registerResponseInterceptor({
             id: 'INTERCEPTOR_BARCODE_PRINT',
             urlMatcher: (url: string) => url.includes('/PRO/PrintTemplate/GetPageSettingBarcodeRead'),
@@ -22,6 +27,36 @@ export class BarcodePrintEnhance {
             }
         });
     }
+
+    // =========================================================================
+    // ======================== [TEMP UI FIX BLOCK START] ======================
+    // 待删除标记：临时针对表格容器高度限制的 UI 补丁
+    // 移除步骤：直接删除当前方法 `applyTemporaryUiFix` 以及 `init()` 内的调用行即可
+    // =========================================================================
+    /**
+     * @private
+     * @method applyTemporaryUiFix
+     * @description 注入临时样式表修复特定表格高度溢出问题。
+     */
+    private applyTemporaryUiFix(): void {
+        const STYLE_ID = 'temp-fix-table-wrapper-height';
+        if (document.getElementById(STYLE_ID)) {
+            return;
+        }
+
+        const styleElement = document.createElement('style');
+        styleElement.id = STYLE_ID;
+        styleElement.type = 'text/css';
+        styleElement.innerHTML = `
+            .table-main .dynamic-table .t-wrapper {
+                max-height: 400px !important;
+            }
+        `;
+
+        (document.head || document.documentElement).appendChild(styleElement);
+    }
+    // ========================= [TEMP UI FIX BLOCK END] =======================
+    // =========================================================================
 
     private injectDomInteraction(): void {
         const MAX_ATTEMPTS = 20;

@@ -32,7 +32,7 @@ import App from './view/App.vue';
         new BarcodePrintEnhance().init();
     }
     
-    console.log('[Core] 增强核心引擎装载完毕');
+    console.log('[Core] 华泓精工BIM增强脚本加载完毕');
 
     const mountVueUI = () => {
         const uiContainer = document.createElement('div');
