@@ -3,7 +3,7 @@ import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProjectMaterialInventoryEnhance
- * @description 原材料仓库存汇总数据重组增强中间件。拦截专属响应流，剔除权重(Weight)为0的无效节点，并对有效对象数组执行从大到小的有序重洗。
+ * @description 原材料仓库存汇总数据重组增强中间件。拦截专属响应流，剔除权重(Weight)为0的无效节点，并对有效对象数组执行从大到小的有序重洗。同时自适应修复数据缩减导致的布局坍塌。
  */
 export class ProjectMaterialInventoryEnhance {
 
@@ -24,10 +24,53 @@ export class ProjectMaterialInventoryEnhance {
                 }
             },
             handler: (originalJson: any) => {
+                // 嗅探到目标接口响应，执行当前域的视图拓扑修复
+                this.applyLayoutFix();
                 return this.reorderAndFilterInventoryData(originalJson);
             }
         });
         console.log('[Core] 原材料仓数据拦截管线就绪');
+    }
+
+    /**
+     * @private
+     * @method applyLayoutFix
+     * @description 动态注入层叠样式表，强制重写顶层统计卡片的物理约束与溢出逻辑，消解数据缩减导致的右侧断崖式留白。
+     * @returns {void}
+     */
+    private applyLayoutFix(): void {
+        const STYLE_ID = 'hhjgbim-inventory-layout-patch';
+        if (document.getElementById(STYLE_ID)) return;
+
+        const styleNode = document.createElement('style');
+        styleNode.id = STYLE_ID;
+        styleNode.type = 'text/css';
+        
+        styleNode.innerHTML = `
+            /* 1. 结构探测：当数据元缩减至不足以溢出容器时（如5项及以下），强行剥离两侧失效的视觉滚动控件 */
+            .search-wrapper:has(.containerto > div:nth-last-child(-n+5):first-child) .scroll-left {
+                display: none !important;
+            }
+
+            /* 2. 容器重构：重置主轴排列规则并引入弹性间隙，保证内部空间的均匀切割 */
+            .search-wrapper .containerto {
+                display: flex !important;
+                width: 100% !important;
+                gap: 16px !important;
+                justify-content: flex-start !important;
+                overflow: hidden !important;
+            }
+
+            /* 3. 边界释放：赋予卡片自动膨胀权重，使其动态平摊剩余可用视口宽度，并设立最高形变阈值 */
+            .search-wrapper .containerto .item,
+            .search-wrapper .containerto .itemlast {
+                flex: 1 1 auto !important;
+                min-width: 200px !important; 
+                max-width: 320px !important; /* 防止极少数量卡片时被无限拉伸破坏 UI 比例 */
+            }
+        `;
+        
+        (document.head || document.documentElement).appendChild(styleNode);
     }
 
     /**
