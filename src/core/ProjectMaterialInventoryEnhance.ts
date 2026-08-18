@@ -1,105 +1,101 @@
+import { API_URLS } from '../config/constants';
 import { NetworkHook } from './NetworkHook';
 
 /**
- * @class ProductionIntegrationBigScreenEnhance
- * @description 生产看板交互增强引擎。通过监听特定数据接口触发 DOM 轮询机制，实施无侵入式的元素劫持与点击穿透路由绑定。
+ * @class ProjectMaterialInventoryEnhance
+ * @description 原材料仓库存汇总数据重组增强中间件。拦截专属响应流，剔除权重(Weight)为0的无效节点，并对有效对象数组执行从大到小的有序重洗。
  */
-export class ProductionIntegrationBigScreenEnhance {
-    
+export class ProjectMaterialInventoryEnhance {
+
     /**
      * @method init
-     * @description 装载增强生命周期，向网络基建挂载目标报表接口的嗅探规则。
+     * @description 初始化拦截管线，向全局网络劫持基建注册原材料汇总响应流的篡改规则。
      */
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
-            id: 'INTERCEPTOR_BIG_SCREEN_CONFIG',
-            urlMatcher: (url: string) => url.includes('/pro/BigScreenConfig/GetBigScreenConfigList'),
+            id: 'INTERCEPTOR_RAW_MATERIAL_INVENTORY',
+            urlMatcher: (url: string) => {
+                try {
+                    const requestUrl = new URL(url, window.location.origin);
+                    const targetUrl = new URL(API_URLS.GET_RAW_WH_SUMMARY_LIST);
+                    return requestUrl.pathname === targetUrl.pathname;
+                } catch (error) {
+                    return url.includes('/PRO/MaterielInventory/GetRawWHSummaryList');
+                }
+            },
             handler: (originalJson: any) => {
-                this.injectDomInteraction();
-                return originalJson;
+                return this.reorderAndFilterInventoryData(originalJson);
             }
         });
+        console.log('[Core] 原材料仓数据拦截管线就绪');
     }
 
-    private injectDomInteraction(): void {
-        const MAX_ATTEMPTS = 20;
-        const INTERVAL_MS = 500;
-        let attempts = 0;
-
-        const timer = setInterval(() => {
-            attempts++;
-            const rightBoxes = document.querySelectorAll('.content_box .box .right-box');
-            
-            if (rightBoxes.length >= 2) {
-                let successfulInjections = 0;
-
-                const targetConfigs = [
-                    { 
-                        container: rightBoxes[0], 
-                        menuTargetText: '工厂产量看板', 
-                        flag: 'data-enhanced-annual' 
-                    },
-                    { 
-                        container: rightBoxes[1], 
-                        menuTargetText: '班组产量报表', 
-                        flag: 'data-enhanced-monthly' 
-                    }
-                ];
-
-                targetConfigs.forEach(config => {
-                    const numBoxes = config.container.querySelectorAll('.num-box');
-                    
-                    if (numBoxes.length >= 3) {
-                        const targetSpan = numBoxes[2].querySelector('.num-1 span.num') as HTMLElement;
-                        
-                        if (targetSpan) {
-                            if (!targetSpan.hasAttribute(config.flag)) {
-                                targetSpan.setAttribute(config.flag, 'true');
-                                targetSpan.style.cursor = 'pointer';
-                                
-                                targetSpan.addEventListener('click', (e: MouseEvent) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    this.triggerSidebarMenuClick(config.menuTargetText);
-                                });
-                                successfulInjections++;
-                            } else {
-                                successfulInjections++;
-                            }
-                        }
-                    }
-                });
-
-                if (successfulInjections === targetConfigs.length) {
-                    console.log('[UI] 看板交互挂载完毕');
-                    clearInterval(timer);
-                    return;
-                }
+    /**
+     * @private
+     * @method reorderAndFilterInventoryData
+     * @description 重新排列并清洗原始报文中的对象序列。剔除 Weight 字段为 0 的节点，并将剩余有效节点逆序排列后回写。
+     * @param {any} originalJson 原始 JSON 响应报文
+     * @returns {any} 洗牌与过滤后的 JSON 数据对象
+     */
+    private reorderAndFilterInventoryData(originalJson: any): any {
+        try {
+            if (!originalJson) {
+                return originalJson;
             }
 
-            if (attempts >= MAX_ATTEMPTS) {
-                clearInterval(timer);
-                console.warn('[UI] 目标 DOM 解析超时');
+            let targetArray: any[] | null = null;
+            let arrayLocation: 'root' | 'data' | 'dataData' | null = null;
+
+            // 依据后端常见的数据报文拓扑，动态寻址实体数组
+            if (Array.isArray(originalJson)) {
+                targetArray = originalJson;
+                arrayLocation = 'root';
+            } else if (originalJson.Data && Array.isArray(originalJson.Data)) {
+                targetArray = originalJson.Data;
+                arrayLocation = 'data';
+            } else if (originalJson.Data && originalJson.Data.Data && Array.isArray(originalJson.Data.Data)) {
+                targetArray = originalJson.Data.Data;
+                arrayLocation = 'dataData';
             }
-        }, INTERVAL_MS);
-    }
 
-    private triggerSidebarMenuClick(targetText: string): void {
-        const menuItems = document.querySelectorAll('.ep-menu-item');
-        let isMatchFound = false;
-
-        for (let i = 0; i < menuItems.length; i++) {
-            const item = menuItems[i] as HTMLElement;
-            
-            if (item.textContent && item.textContent.includes(targetText)) {
-                item.click();
-                isMatchFound = true;
-                break;
+            // 边界熔断防御：未捕获到合规的数据项数组则直接放行原报文
+            if (!targetArray || targetArray.length === 0) {
+                return originalJson;
             }
-        }
 
-        if (!isMatchFound) {
-            console.error(`[UI] 导航节点索引失败: ${targetText}`);
+            // 阶段一：前置清洗，剔除 Weight 为 0 或解析异常的无效节点
+            const filteredArray = targetArray.filter((item: any) => {
+                const weightVal = item && item.Weight !== undefined ? parseFloat(item.Weight) : 0;
+                // 保留有效数值，且严格剔除 0
+                return !isNaN(weightVal) && weightVal !== 0;
+            });
+
+            // 阶段二：对清洗后的高价值数据执行原地逆序重洗（依据 Weight 从大到小排序）
+            filteredArray.sort((prevItem: any, nextItem: any) => {
+                const prevWeight = prevItem && prevItem.Weight !== undefined ? parseFloat(prevItem.Weight) : 0;
+                const nextWeight = nextItem && nextItem.Weight !== undefined ? parseFloat(nextItem.Weight) : 0;
+                
+                const validPrev = isNaN(prevWeight) ? 0 : prevWeight;
+                const validNext = isNaN(nextWeight) ? 0 : nextWeight;
+
+                return validNext - validPrev;
+            });
+
+            // 阶段三：依据路由层级记录，将过滤排序后的独立安全副本接管回传至原 JSON 拓扑路径
+            if (arrayLocation === 'root') {
+                originalJson = filteredArray;
+            } else if (arrayLocation === 'data') {
+                originalJson.Data = filteredArray;
+            } else if (arrayLocation === 'dataData') {
+                originalJson.Data.Data = filteredArray;
+            }
+
+            console.log(`[Middleware] 原材料仓数据序列洗牌成功，剔除空节点后剩余 ${filteredArray.length} 项有效实体`);
+            return originalJson;
+
+        } catch (error) {
+            console.error('[Middleware] 原材料仓汇总拦截洗牌引擎抛出灾难性异常，触发安全降级机制', error);
+            return originalJson;
         }
     }
 }
