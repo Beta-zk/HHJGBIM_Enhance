@@ -3,7 +3,7 @@ import { NetworkHook } from './NetworkHook';
 
 /**
  * @class ProjectMaterialInventoryEnhance
- * @description 原材料仓库存汇总数据重组增强中间件。拦截专属响应流，对内部对象数组依 Weight 字段执行从大到小的有序重洗。
+ * @description 原材料仓库存汇总数据重组增强中间件。拦截专属响应流，剔除权重(Weight)为0的无效节点，并对有效对象数组执行从大到小的有序重洗。
  */
 export class ProjectMaterialInventoryEnhance {
 
@@ -24,7 +24,7 @@ export class ProjectMaterialInventoryEnhance {
                 }
             },
             handler: (originalJson: any) => {
-                return this.reorderInventoryData(originalJson);
+                return this.reorderAndFilterInventoryData(originalJson);
             }
         });
         console.log('[Core] 原材料仓数据拦截管线就绪');
@@ -32,21 +32,21 @@ export class ProjectMaterialInventoryEnhance {
 
     /**
      * @private
-     * @method reorderInventoryData
-     * @description 重新排列原始报文中的对象序列。提取关键数值型或字符串型的 Weight 权重进行逆序排列。
+     * @method reorderAndFilterInventoryData
+     * @description 重新排列并清洗原始报文中的对象序列。剔除 Weight 字段为 0 的节点，并将剩余有效节点逆序排列后回写。
      * @param {any} originalJson 原始 JSON 响应报文
-     * @returns {any} 重排处理后的 JSON 数据对象
+     * @returns {any} 洗牌与过滤后的 JSON 数据对象
      */
-    private reorderInventoryData(originalJson: any): any {
+    private reorderAndFilterInventoryData(originalJson: any): any {
         try {
             if (!originalJson) {
                 return originalJson;
             }
 
-            // 依据后端常见的数据报文拓扑，兼容处理直属数组、包裹在 Data 域或包裹在 Data.Data 内的数组流
             let targetArray: any[] | null = null;
             let arrayLocation: 'root' | 'data' | 'dataData' | null = null;
 
+            // 依据后端常见的数据报文拓扑，动态寻址实体数组
             if (Array.isArray(originalJson)) {
                 targetArray = originalJson;
                 arrayLocation = 'root';
@@ -58,24 +58,39 @@ export class ProjectMaterialInventoryEnhance {
                 arrayLocation = 'dataData';
             }
 
-            // 边界熔断防御：未捕获到合规的数据项数组则直接放行原报文，防止系统崩溃
+            // 边界熔断防御：未捕获到合规的数据项数组则直接放行原报文
             if (!targetArray || targetArray.length === 0) {
                 return originalJson;
             }
 
-            // 对目标数组执行原地逆序重洗（依据 Weight 从大到小排序）
-            targetArray.sort((prevItem: any, nextItem: any) => {
+            // 阶段一：前置清洗，剔除 Weight 为 0 或解析异常的无效节点
+            const filteredArray = targetArray.filter((item: any) => {
+                const weightVal = item && item.Weight !== undefined ? parseFloat(item.Weight) : 0;
+                // 保留有效数值，且严格剔除 0
+                return !isNaN(weightVal) && weightVal !== 0;
+            });
+
+            // 阶段二：对清洗后的高价值数据执行原地逆序重洗（依据 Weight 从大到小排序）
+            filteredArray.sort((prevItem: any, nextItem: any) => {
                 const prevWeight = prevItem && prevItem.Weight !== undefined ? parseFloat(prevItem.Weight) : 0;
                 const nextWeight = nextItem && nextItem.Weight !== undefined ? parseFloat(nextItem.Weight) : 0;
                 
-                // 排除无效数值或 NaN 导致的排序失效
                 const validPrev = isNaN(prevWeight) ? 0 : prevWeight;
                 const validNext = isNaN(nextWeight) ? 0 : nextWeight;
 
                 return validNext - validPrev;
             });
 
-            console.log(`[Middleware] 原材料仓数据序列洗牌成功，已重组 ${targetArray.length} 项实体的排布顺序`);
+            // 阶段三：依据路由层级记录，将过滤排序后的独立安全副本接管回传至原 JSON 拓扑路径
+            if (arrayLocation === 'root') {
+                originalJson = filteredArray;
+            } else if (arrayLocation === 'data') {
+                originalJson.Data = filteredArray;
+            } else if (arrayLocation === 'dataData') {
+                originalJson.Data.Data = filteredArray;
+            }
+
+            console.log(`[Middleware] 原材料仓数据序列洗牌成功，剔除空节点后剩余 ${filteredArray.length} 项有效实体`);
             return originalJson;
 
         } catch (error) {
