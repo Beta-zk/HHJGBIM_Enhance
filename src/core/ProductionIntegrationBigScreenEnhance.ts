@@ -1,4 +1,5 @@
 import { NetworkHook } from './NetworkHook';
+import { waitForCondition } from '../utils/helpers';
 
 /**
  * @class ProductionIntegrationBigScreenEnhance
@@ -6,10 +7,6 @@ import { NetworkHook } from './NetworkHook';
  */
 export class ProductionIntegrationBigScreenEnhance {
     
-    /**
-     * @method init
-     * @description 装载增强生命周期，向网络基建挂载目标报表接口的嗅探规则。
-     */
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
             id: 'INTERCEPTOR_BIG_SCREEN_CONFIG',
@@ -22,66 +19,42 @@ export class ProductionIntegrationBigScreenEnhance {
     }
 
     private injectDomInteraction(): void {
-        const MAX_ATTEMPTS = 20;
-        const INTERVAL_MS = 500;
-        let attempts = 0;
-
-        const timer = setInterval(() => {
-            attempts++;
+        waitForCondition(() => {
             const rightBoxes = document.querySelectorAll('.content_box .box .right-box');
-            
-            if (rightBoxes.length >= 2) {
-                let successfulInjections = 0;
+            if (rightBoxes.length < 2) return false;
 
-                const targetConfigs = [
-                    { 
-                        container: rightBoxes[0], 
-                        menuTargetText: '工厂产量看板', 
-                        flag: 'data-enhanced-annual' 
-                    },
-                    { 
-                        container: rightBoxes[1], 
-                        menuTargetText: '班组产量报表', 
-                        flag: 'data-enhanced-monthly' 
-                    }
-                ];
+            let successfulInjections = 0;
+            const targetConfigs = [
+                { container: rightBoxes[0], menuTargetText: '工厂产量看板', flag: 'data-enhanced-annual' },
+                { container: rightBoxes[1], menuTargetText: '班组产量报表', flag: 'data-enhanced-monthly' }
+            ];
 
-                targetConfigs.forEach(config => {
-                    const numBoxes = config.container.querySelectorAll('.num-box');
-                    
-                    if (numBoxes.length >= 3) {
-                        const targetSpan = numBoxes[2].querySelector('.num-1 span.num') as HTMLElement;
-                        
-                        if (targetSpan) {
-                            if (!targetSpan.hasAttribute(config.flag)) {
-                                targetSpan.setAttribute(config.flag, 'true');
-                                targetSpan.style.cursor = 'pointer';
-                                
-                                targetSpan.addEventListener('click', (e: MouseEvent) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    this.triggerSidebarMenuClick(config.menuTargetText);
-                                });
-                                successfulInjections++;
-                            } else {
-                                successfulInjections++;
-                            }
+            targetConfigs.forEach(config => {
+                const numBoxes = config.container.querySelectorAll('.num-box');
+                if (numBoxes.length >= 3) {
+                    const targetSpan = numBoxes[2].querySelector('.num-1 span.num') as HTMLElement;
+                    if (targetSpan) {
+                        if (!targetSpan.hasAttribute(config.flag)) {
+                            targetSpan.setAttribute(config.flag, 'true');
+                            targetSpan.style.cursor = 'pointer';
+                            
+                            targetSpan.addEventListener('click', (e: MouseEvent) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                this.triggerSidebarMenuClick(config.menuTargetText);
+                            });
                         }
+                        successfulInjections++;
                     }
-                });
-
-                if (successfulInjections === targetConfigs.length) {
-                    console.log('[UI] 看板交互挂载完毕');
-                    clearInterval(timer);
-                    return;
                 }
-            }
+            });
 
-            if (attempts >= MAX_ATTEMPTS) {
-                clearInterval(timer);
-                console.warn('[UI] 目标 DOM 解析超时');
-            }
-        }, INTERVAL_MS);
+            return successfulInjections === targetConfigs.length ? true : false;
+        }).then(() => {
+            console.log('[UI] 看板交互挂载完毕');
+        }).catch(() => {
+            console.warn('[UI] 目标 DOM 解析超时');
+        });
     }
 
     private triggerSidebarMenuClick(targetText: string): void {
@@ -90,7 +63,6 @@ export class ProductionIntegrationBigScreenEnhance {
 
         for (let i = 0; i < menuItems.length; i++) {
             const item = menuItems[i] as HTMLElement;
-            
             if (item.textContent && item.textContent.includes(targetText)) {
                 item.click();
                 isMatchFound = true;

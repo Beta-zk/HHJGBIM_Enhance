@@ -4,7 +4,7 @@ type ToastType = 'info' | 'success' | 'warning' | 'error';
  * @function showToast
  * @description 原生级 Naive UI 同款 Message 提示器
  * @param {string} msg 提示内容
- * @param {boolean | ToastType} typeOrStatus 状态（支持布尔值或 'success' | 'error' | 'warning' | 'info'）
+ * @param {boolean | ToastType} typeOrStatus 状态
  * @param {number} [duration=3000] 显示时长(ms)
  * @returns {void}
  */
@@ -13,32 +13,17 @@ export function showToast(
     typeOrStatus: boolean | ToastType = true,
     duration: number = 3000
 ): void {
-    // 兼容原本的 boolean 传参，同时支持更多类型
     const type: ToastType = typeof typeOrStatus === 'boolean' 
         ? (typeOrStatus ? 'success' : 'error') 
         : typeOrStatus;
 
-    // Naive UI 官方配色定义
     const colorMap: Record<ToastType, { iconColor: string; shadow: string }> = {
-        success: { 
-            iconColor: '#18a058', 
-            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
-        },
-        error: { 
-            iconColor: '#d03050', 
-            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
-        },
-        warning: { 
-            iconColor: '#f0a020', 
-            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
-        },
-        info: { 
-            iconColor: '#2080f0', 
-            shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' 
-        }
+        success: { iconColor: '#18a058', shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' },
+        error: { iconColor: '#d03050', shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' },
+        warning: { iconColor: '#f0a020', shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' },
+        info: { iconColor: '#2080f0', shadow: '0 3px 6px -4px rgba(0, 0, 0, .12), 0 6px 16px 0 rgba(0, 0, 0, .08), 0 9px 28px 8px rgba(0, 0, 0, .05)' }
     };
 
-    // Naive UI / Ionicons 图标库同款 SVG
     const icons: Record<ToastType, string> = {
         success: `<svg viewBox="0 0 512 512" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192s192-86 192-192z"></path><path d="M352 176L217.6 336L160 272"></path></svg>`,
         error: `<svg viewBox="0 0 512 512" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192s192-86 192-192z"></path><path d="M320 320L192 192"></path><path d="M192 320l128-128"></path></svg>`,
@@ -49,7 +34,6 @@ export function showToast(
     const currentConfig = colorMap[type];
     const toast = document.createElement('div');
 
-    // Naive UI 浅色主题卡片样式
     toast.style.cssText = `
         position: fixed;
         top: 15%;
@@ -73,7 +57,6 @@ export function showToast(
         transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     `;
 
-    // 图标容器
     const iconSpan = document.createElement('span');
     iconSpan.style.cssText = `
         display: inline-flex;
@@ -86,7 +69,6 @@ export function showToast(
     `;
     iconSpan.innerHTML = icons[type];
 
-    // 文本容器
     const textSpan = document.createElement('span');
     textSpan.style.cssText = `
         display: inline-block;
@@ -100,16 +82,12 @@ export function showToast(
     const attemptAppend = () => {
         if (document.body) {
             document.body.appendChild(toast);
-
-            // 进场动画：顶部滑入 (Naive UI Transition)
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     toast.style.opacity = '1';
                     toast.style.transform = 'translate(-50%, 0)';
                 });
             });
-
-            // 退出动画
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translate(-50%, -100%)';
@@ -121,4 +99,51 @@ export function showToast(
     };
 
     attemptAppend();
+}
+
+/**
+ * @function waitForCondition
+ * @description 通用异步轮询断言器，支持复杂结构解析与挂载阻断。
+ * @param {Function} conditionFn 寻址闭包，返回 Truthy 表示寻址成功
+ * @param {number} [maxAttempts=20] 最大轮询次数
+ * @param {number} [intervalMs=500] 轮询间隔(ms)
+ * @returns {Promise<T>}
+ */
+export function waitForCondition<T>(
+    conditionFn: () => T | false | null | undefined,
+    maxAttempts: number = 20,
+    intervalMs: number = 500
+): Promise<T> {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const timer = setInterval(() => {
+            attempts++;
+            const result = conditionFn();
+            if (result) {
+                clearInterval(timer);
+                resolve(result);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(timer);
+                reject(new Error(`[DOM] 轮询断言超时`));
+            }
+        }, intervalMs);
+    });
+}
+
+/**
+ * @function waitForElement
+ * @description 单一节点异步寻址器（waitForCondition 的语法糖）
+ */
+export function waitForElement(
+    selector: string,
+    maxAttempts: number = 20,
+    intervalMs: number = 500
+): Promise<HTMLElement> {
+    return waitForCondition(
+        () => document.querySelector(selector) as HTMLElement | null,
+        maxAttempts,
+        intervalMs
+    ).catch(() => {
+        throw new Error(`[DOM] 节点轮询寻址超时: ${selector}`);
+    });
 }

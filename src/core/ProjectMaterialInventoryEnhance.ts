@@ -1,9 +1,11 @@
 import { API_URLS } from '../config/constants';
 import { NetworkHook } from './NetworkHook';
+import { waitForElement } from '../utils/helpers';
 
 /**
  * @class ProjectMaterialInventoryEnhance
  * @description 原材料仓库存汇总数据重组增强中间件。拦截专属响应流，剔除权重(Weight)为0的无效节点，并对有效对象数组执行从大到小的有序重洗。
+ * 同步引入针对特定页面的 CSS 容器宽度样式修正机制。
  */
 export class ProjectMaterialInventoryEnhance {
 
@@ -24,10 +26,29 @@ export class ProjectMaterialInventoryEnhance {
                 }
             },
             handler: (originalJson: any) => {
+                this.injectStyleFix();
                 return this.reorderAndFilterInventoryData(originalJson);
             }
         });
-        console.log('[Core] 原材料仓数据拦截管线就绪');
+        console.log('[Core] 原材料仓数据拦截管线与界面探针就绪');
+    }
+
+    /**
+     * @private
+     * @method injectStyleFix
+     * @description 样式修复探针。基于通用工具层提供的异步轮询机制，动态注入最大宽度限制约束。
+     */
+    private injectStyleFix(): void {
+        waitForElement('#app .app-wrapper .app-main .container.abs100')
+            .then((targetContainer) => {
+                if (targetContainer.style.maxWidth !== '100%') {
+                    targetContainer.style.maxWidth = '100%';
+                    console.log('[UI] 样式边界约束修正执行完毕：成功赋予目标容器 max-width: 100%');
+                }
+            })
+            .catch((error) => {
+                console.warn('[UI] 样式修复探针执行失败：', error.message);
+            });
     }
 
     /**
@@ -39,34 +60,21 @@ export class ProjectMaterialInventoryEnhance {
      */
     private reorderAndFilterInventoryData(originalJson: any): any {
         try {
-            if (!originalJson) {
+            // 依据明确拓扑结构实施严格断言，阻断不合规报文
+            if (!originalJson || !originalJson.Data || !Array.isArray(originalJson.Data)) {
                 return originalJson;
             }
 
-            let targetArray: any[] | null = null;
-            let arrayLocation: 'root' | 'data' | 'dataData' | null = null;
+            const targetArray = originalJson.Data;
 
-            // 依据后端常见的数据报文拓扑，动态寻址实体数组
-            if (Array.isArray(originalJson)) {
-                targetArray = originalJson;
-                arrayLocation = 'root';
-            } else if (originalJson.Data && Array.isArray(originalJson.Data)) {
-                targetArray = originalJson.Data;
-                arrayLocation = 'data';
-            } else if (originalJson.Data && originalJson.Data.Data && Array.isArray(originalJson.Data.Data)) {
-                targetArray = originalJson.Data.Data;
-                arrayLocation = 'dataData';
-            }
-
-            // 边界熔断防御：未捕获到合规的数据项数组则直接放行原报文
-            if (!targetArray || targetArray.length === 0) {
+            // 边界熔断防御：数据项为空直接放行
+            if (targetArray.length === 0) {
                 return originalJson;
             }
 
             // 阶段一：前置清洗，剔除 Weight 为 0 或解析异常的无效节点
             const filteredArray = targetArray.filter((item: any) => {
                 const weightVal = item && item.Weight !== undefined ? parseFloat(item.Weight) : 0;
-                // 保留有效数值，且严格剔除 0
                 return !isNaN(weightVal) && weightVal !== 0;
             });
 
@@ -81,14 +89,8 @@ export class ProjectMaterialInventoryEnhance {
                 return validNext - validPrev;
             });
 
-            // 阶段三：依据路由层级记录，将过滤排序后的独立安全副本接管回传至原 JSON 拓扑路径
-            if (arrayLocation === 'root') {
-                originalJson = filteredArray;
-            } else if (arrayLocation === 'data') {
-                originalJson.Data = filteredArray;
-            } else if (arrayLocation === 'dataData') {
-                originalJson.Data.Data = filteredArray;
-            }
+            // 阶段三：回写至原定层级
+            originalJson.Data = filteredArray;
 
             console.log(`[Middleware] 原材料仓数据序列洗牌成功，剔除空节点后剩余 ${filteredArray.length} 项有效实体`);
             return originalJson;
