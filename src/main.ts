@@ -4,6 +4,7 @@ import { authService } from './services/AuthService';
 import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
 import { ProductionIntegrationBigScreenEnhance } from './core/ProductionIntegrationBigScreenEnhance';
 import { BarcodePrintEnhance } from './core/BarcodePrintEnhance';
+import { ProjectMaterialInventoryEnhance } from './core/ProjectMaterialInventoryEnhance';
 import { settings } from './config/settings';
 import { createApp } from 'vue';
 import App from './view/App.vue';
@@ -17,9 +18,11 @@ import App from './view/App.vue';
     
     const userConfig = settings.get();
 
+    // 激活底层网络劫持总线
     NetworkHook.getInstance().init();
     authService.initObserver();
 
+    // 级联注入各功能面增强引擎
     if (userConfig.enableProjectInventory) {
         new ProjectInventoryEnhance().init();
     }
@@ -30,6 +33,10 @@ import App from './view/App.vue';
 
     if (userConfig.enableBarcodePrintEnhance) {
         new BarcodePrintEnhance().init();
+    }
+
+    if (userConfig.enableProjectMaterialInventory || userConfig.enableProjectMaterialInventory === undefined) {
+        new ProjectMaterialInventoryEnhance().init();
     }
     
     console.log('[Core] 华泓精工BIM增强脚本加载完毕');

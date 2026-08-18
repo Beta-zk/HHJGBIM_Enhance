@@ -79,7 +79,7 @@
                         </span>
 
                         <input type="text" v-model="formState.crawlerDomain" @blur="checkPing" class="w-[190px] bg-slate-800 border border-solid border-slate-600 rounded-md text-slate-50 py-2 px-3 appearance-none outline-none transition-colors duration-200 focus:border-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
-                            placeholder="例如: http://127.0.0.1:8000" :disabled="isInitializing" />
+                            placeholder="默认: http://127.0.0.1:8000" :disabled="isInitializing" />
                             
                         <button class="w-9 h-9 flex items-center justify-center shrink-0 bg-slate-700 border border-solid border-slate-600 rounded-md text-slate-50 cursor-pointer appearance-none outline-none transition-colors hover:bg-slate-600 hover:border-sky-400 disabled:hover:bg-slate-700 disabled:hover:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale" @click="triggerInit"
                             :disabled="isInitializing || pingStatus !== 'success'">
@@ -89,7 +89,7 @@
                 </div>
 
                 <div class="bg-sky-400/10 border border-dashed border-sky-400 text-sky-300 p-3 rounded-md text-[13px]">
-                    提示：修改配置后，需点击“保存配置并应用”持久化。
+                    提示：修改配置后，需点击“保存并应用”持久化。
                 </div>
             </div>
 
@@ -220,7 +220,7 @@ const startPolling = (taskId: string) => {
                 if (res.status === 'completed') {
                     clearInterval(pollTimer);
                     isInitializing.value = false;
-                    showToast('恭喜，后台全量爬虫任务已同步完成！', true);
+                    showToast('全量爬虫任务已完成！', true);
                     
                     setTimeout(() => {
                         progressValue.value = 0;

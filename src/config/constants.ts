@@ -17,5 +17,6 @@ export const API_URLS = {
     LOCAL_SYSTEM_REPORT_PATH: '/system/report',
     LOCAL_FACTORY_YEAR_OUTPUT_PATH: '/factory/yearOutput',
     GET_COMP_SCHDULING_PAGE_LIST: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingPageList',
-    GET_COMP_SCHDULING_INFO_DETAIL: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingInfoDetail'
+    GET_COMP_SCHDULING_INFO_DETAIL: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingInfoDetail',
+    GET_RAW_WH_SUMMARY_LIST: 'https://integ-plat-produce-api.bimtk.com/PRO/MaterielInventory/GetRawWHSummaryList'
 };
