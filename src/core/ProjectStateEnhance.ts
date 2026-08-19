@@ -6,7 +6,7 @@ import { waitForElement } from '../utils/helpers';
 
 /**
  * @class ProjectStateEnhance
- * @description 业务数据重组与视图增强中间件。支持状态生命周期逻辑排序、语义化区块色系，并集成了路由黑名单热卸载机制。
+ * @description 业务数据重组与视图增强中间件。支持状态生命周期逻辑排序、语义化区块色系，并集成了路由黑名单热卸载机制及跨浮层（如 vxe-table 冻结列）的高度同步机制。
  */
 export class ProjectStateEnhance {
     private isCrawlerReady: boolean = false;
@@ -259,6 +259,12 @@ export class ProjectStateEnhance {
         }, 150);
     }
 
+    /**
+     * @private
+     * @method scanAndApply
+     * @description 执行 DOM 遍历，定位实体并注入视效。
+     * 为兼容 vxe-table 的多图层表架构（左右冻结区域为独立的 Table Node），特引入基于 rowid 的状态漫游机制。
+     */
     private scanAndApply(): void {
         if (this.BLACKLIST_ROUTES.some(route => window.location.pathname.toLowerCase().includes(route))) {
             this.cleanupAll();
@@ -266,42 +272,68 @@ export class ProjectStateEnhance {
         }
 
         const isFilterActive = !!document.getElementById(this.FILTER_CONTAINER_ID);
-        const tbodies = document.querySelectorAll('table tbody');
-        
-        tbodies.forEach(tbody => {
-            const trs = tbody.querySelectorAll('tr');
-            
-            trs.forEach(tr => {
-                let matchedState: string | null = null;
-                let targetElement: HTMLElement | null = null;
+        const allTrs = Array.from(document.querySelectorAll('table tbody tr'));
+        const vxeRowMap = new Map<string, string>(); // 保存主表映射的 { rowid: matchedState }
 
-                const cells = tr.querySelectorAll('td .cell, td > div');
-                for (let i = 0; i < cells.length; i++) {
-                    const el = cells[i] as HTMLElement;
-                    const clone = el.cloneNode(true) as HTMLElement;
-                    clone.querySelectorAll('.hhjg-state-badge').forEach(b => b.remove());
-                    
-                    const text = clone.textContent?.trim() || '';
-                    if (text && this.matchMap.has(text)) {
-                        matchedState = this.matchMap.get(text)!;
-                        targetElement = el;
-                        break;
+        type RowMeta = {
+            tr: HTMLElement;
+            rowid: string | null;
+            matchedState: string | null;
+            targetElement: HTMLElement | null;
+        };
+
+        // 第 1 阶段：信息采集与跨层凭证预注册
+        const parsedRows: RowMeta[] = allTrs.map(tr => {
+            const rowid = tr.getAttribute('rowid');
+            let matchedState: string | null = null;
+            let targetElement: HTMLElement | null = null;
+
+            const cells = tr.querySelectorAll('td .cell, td > div');
+            for (let i = 0; i < cells.length; i++) {
+                const el = cells[i] as HTMLElement;
+                const clone = el.cloneNode(true) as HTMLElement;
+                clone.querySelectorAll('.hhjg-state-badge').forEach(b => b.remove());
+                
+                const text = clone.textContent?.trim() || '';
+                if (text && this.matchMap.has(text)) {
+                    matchedState = this.matchMap.get(text)!;
+                    targetElement = el;
+                    if (rowid) {
+                        vxeRowMap.set(rowid, matchedState);
                     }
+                    break;
+                }
+            }
+            
+            return { tr: tr as HTMLElement, rowid, matchedState, targetElement };
+        });
+
+        // 第 2 阶段：状态消费与样式强制下发（覆盖所有冻结图层内的游离 Node）
+        parsedRows.forEach(meta => {
+            let finalState = meta.matchedState;
+            // 补偿逻辑：如果当前行未命中状态，但同源映射池中有其所属组的状态记录，进行状态漫游同步
+            if (!finalState && meta.rowid && vxeRowMap.has(meta.rowid)) {
+                finalState = vxeRowMap.get(meta.rowid)!;
+            }
+
+            const { tr, targetElement } = meta;
+
+            if (finalState) {
+                if (isFilterActive) {
+                    tr.style.display = this.activeStates.has(finalState) ? '' : 'none';
+                    if (!this.activeStates.has(finalState)) return;
+                } else {
+                    tr.style.display = '';
                 }
 
-                if (matchedState && targetElement) {
-                    if (isFilterActive) {
-                        (tr as HTMLElement).style.display = this.activeStates.has(matchedState) ? '' : 'none';
-                        if (!this.activeStates.has(matchedState)) return;
-                    } else {
-                        (tr as HTMLElement).style.display = '';
-                    }
+                // 为跨表图层的所有关联行统一推进行高与间距控制
+                tr.classList.add('hhjg-state-row-enhanced');
 
-                    tr.classList.add('hhjg-state-row-enhanced');
+                // 对具备核心业务词汇的定位单元格进行精准角标投递
+                if (targetElement) {
                     targetElement.classList.add('hhjg-state-cell-enhanced');
-
                     let badge = targetElement.querySelector(':scope > .hhjg-state-badge') as HTMLElement;
-                    const themeColor = this.getBadgeColor(matchedState);
+                    const themeColor = this.getBadgeColor(finalState);
 
                     if (!badge) {
                         badge = document.createElement('span');
@@ -312,15 +344,19 @@ export class ProjectStateEnhance {
                         badge.style.backgroundColor = themeColor;
                     }
                     
-                    if (badge.textContent !== matchedState) {
-                        badge.textContent = matchedState;
+                    if (badge.textContent !== finalState) {
+                        badge.textContent = finalState;
                     }
-                } else if (!matchedState && targetElement) {
-                    targetElement.querySelector(':scope > .hhjg-state-badge')?.remove();
-                    tr.classList.remove('hhjg-state-row-enhanced');
-                    targetElement.classList.remove('hhjg-state-cell-enhanced');
                 }
-            });
+            } else {
+                // 安全卸载：确保无残留
+                tr.classList.remove('hhjg-state-row-enhanced');
+                tr.style.display = ''; 
+                tr.querySelectorAll('.hhjg-state-cell-enhanced').forEach(el => {
+                    el.classList.remove('hhjg-state-cell-enhanced');
+                    el.querySelector(':scope > .hhjg-state-badge')?.remove();
+                });
+            }
         });
     }
 }
