@@ -20,11 +20,11 @@
 
                 <div class="flex justify-between items-center bg-slate-900 p-4 rounded-lg border border-solid border-slate-800">
                     <div class="flex-1 mr-5">
-                        <h4 class="m-0 mb-1.5 text-slate-200 text-[15px]">项目库存统计状态增强</h4>
-                        <p class="m-0 text-slate-400 text-[13px] leading-relaxed">为新增的一列状态提供数据信息。</p>
+                        <h4 class="m-0 mb-1.5 text-slate-200 text-[15px]">项目状态生命周期增强</h4>
+                        <p class="m-0 text-slate-400 text-[13px] leading-relaxed">为项目表格动态注入生命周期状态指示器及全局筛选面板。</p>
                     </div>
                     <label class="relative inline-block w-11 h-6 shrink-0">
-                        <input type="checkbox" v-model="formState.enableProjectInventory" class="peer opacity-0 w-0 h-0 absolute appearance-none">
+                        <input type="checkbox" v-model="formState.enableProjectState" class="peer opacity-0 w-0 h-0 absolute appearance-none">
                         <span class="absolute cursor-pointer inset-0 bg-slate-600 transition duration-300 rounded-full before:absolute before:content-[''] before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:transition before:duration-300 before:rounded-full peer-checked:bg-sky-400 peer-checked:before:translate-x-[20px]"></span>
                     </label>
                 </div>
@@ -111,8 +111,9 @@ const emit = defineEmits(['close']);
 
 const formState = reactive<IUserSettings>({
     enableProductionBigScreen: true,
-    enableProjectInventory: true,
+    enableProjectState: true,
     enableBarcodePrintEnhance: true,
+    enableProjectMaterialInventory: true,
     crawlerDomain: '',
     deepeningPersonnel: ''
 });
@@ -130,8 +131,10 @@ const isOverflowing = ref(false);
 onMounted(() => {
     const currentConfig = settings.get();
     formState.enableProductionBigScreen = currentConfig.enableProductionBigScreen;
-    formState.enableProjectInventory = currentConfig.enableProjectInventory;
+    // 回退旧版数据至新定义的配置键，缺省为 true 保证平滑过渡
+    formState.enableProjectState = currentConfig.enableProjectState ?? true;
     formState.enableBarcodePrintEnhance = currentConfig.enableBarcodePrintEnhance ?? true;
+    formState.enableProjectMaterialInventory = currentConfig.enableProjectMaterialInventory ?? true;
     formState.crawlerDomain = currentConfig.crawlerDomain;
     formState.deepeningPersonnel = currentConfig.deepeningPersonnel || '';
 
@@ -250,8 +253,9 @@ const handleClose = () => {
 const handleSave = () => {
     settings.update({
         enableProductionBigScreen: formState.enableProductionBigScreen,
-        enableProjectInventory: formState.enableProjectInventory,
-        enableBarcodePrintEnhance: formState.enableBarcodePrintEnhance, 
+        enableProjectState: formState.enableProjectState,
+        enableBarcodePrintEnhance: formState.enableBarcodePrintEnhance,
+        enableProjectMaterialInventory: formState.enableProjectMaterialInventory,
         crawlerDomain: formState.crawlerDomain,
         deepeningPersonnel: formState.deepeningPersonnel
     });

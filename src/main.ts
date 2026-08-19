@@ -1,7 +1,7 @@
 import './style.css';
 import { NetworkHook } from './core/NetworkHook';
 import { authService } from './services/AuthService';
-import { ProjectInventoryEnhance } from './core/ProjectInventoryEnhance';
+import { ProjectStateEnhance } from './core/ProjectStateEnhance';
 import { ProductionIntegrationBigScreenEnhance } from './core/ProductionIntegrationBigScreenEnhance';
 import { BarcodePrintEnhance } from './core/BarcodePrintEnhance';
 import { ProjectMaterialInventoryEnhance } from './core/ProjectMaterialInventoryEnhance';
@@ -23,8 +23,8 @@ import App from './view/App.vue';
     authService.initObserver();
 
     // 级联注入各功能面增强引擎
-    if (userConfig.enableProjectInventory) {
-        new ProjectInventoryEnhance().init();
+    if (userConfig.enableProjectState) {
+        new ProjectStateEnhance().init();
     }
     
     if (userConfig.enableProductionBigScreen) {

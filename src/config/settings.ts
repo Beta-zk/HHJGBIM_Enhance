@@ -4,7 +4,7 @@
  */
 export interface IUserSettings {
     enableProductionBigScreen: boolean;
-    enableProjectInventory: boolean;
+    enableProjectState: boolean;
     enableBarcodePrintEnhance: boolean;
     enableProjectMaterialInventory: boolean;
     crawlerDomain: string;
@@ -13,7 +13,7 @@ export interface IUserSettings {
 
 const DEFAULT_SETTINGS: IUserSettings = {
     enableProductionBigScreen: true,
-    enableProjectInventory: true,
+    enableProjectState: true,
     enableBarcodePrintEnhance: true,
     enableProjectMaterialInventory: true,
     crawlerDomain: 'http://127.0.0.1:8000',
