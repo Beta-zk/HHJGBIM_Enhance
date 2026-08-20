@@ -20,8 +20,11 @@ export default defineConfig({
           "127.0.0.1"
         ],
         "run-at": "document-start",
+        updateURL: "https://github.com/Beta-zk/HHJGBIM_Enhance/releases/latest/download/HHJGBIM_Enhance.meta.js",
+        downloadURL: "https://github.com/Beta-zk/HHJGBIM_Enhance/releases/latest/download/HHJGBIM_Enhance.user.js",
       },
       build: {
+        metaFileName: true,
         externalGlobals: {
           vue: cdn.jsdelivr("Vue", "dist/vue.global.prod.js"),
           echarts: cdn.jsdelivr("echarts", "dist/echarts.min.js"),
