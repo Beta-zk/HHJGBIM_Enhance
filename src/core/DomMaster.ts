@@ -64,7 +64,7 @@ export interface PageSnapshot {
  * 2. 页面情报缓存：由 main 激活，监听 SPA 路由变化并重建页面快照（URL/标题/可见文本索引），
  *    提供按文本查找元素/归属的通用查询，供各增强模块按内容定位页面节点。
  */
-class DomMaster {
+export class DomMaster {
 
     private static instance: DomMaster;
 

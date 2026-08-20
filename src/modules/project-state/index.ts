@@ -41,7 +41,6 @@ class ProjectStateEnhance implements IEnhanceModule {
     public readonly description = '为项目表格动态注入生命周期状态指示器及全局筛选面板。';
     public readonly defaultEnabled = true;
     public readonly settingsKey = 'enableProjectState';
-    public readonly styleIds = [this.STYLE_TAG_ID];
 
     public readonly interceptors = [{
         id: 'INTERCEPTOR_PROJECT_FILTER',
@@ -71,6 +70,7 @@ class ProjectStateEnhance implements IEnhanceModule {
     private filterPanel: IDraggablePanel | null = null;
     private readonly FILTER_CONTAINER_ID = 'hhjg-state-filter-container';
     private readonly STYLE_TAG_ID = 'hhjg-state-enhance-styles';
+    public readonly styleIds = [this.STYLE_TAG_ID];
     
     private dictPromise: Promise<void> | null = null;
 
