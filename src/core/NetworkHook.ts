@@ -10,6 +10,39 @@ export interface IResponseInterceptor {
 }
 
 /**
+ * @type UrlPattern
+ * @description URL 匹配模式：子串关键字 / 正则 / 精确 pathname（传入完整 URL 或路径，按 pathname 比较）/ 模式数组。
+ */
+export type UrlPattern = string | RegExp | { pathname: string } | UrlPattern[];
+
+/**
+ * @function matchUrl
+ * @description 通用 URL 匹配器，收敛拦截器 urlMatcher 的三种常见写法（includes / 正则 / pathname 精确）。
+ * 数组模式任一命中即返回 true；string 走子串匹配（大小写敏感）；{ pathname } 比较规范化后的 pathname。
+ * @param {string} url 待匹配的请求地址（可为相对路径）
+ * @param {UrlPattern} pattern 匹配模式
+ * @returns {boolean} 是否命中
+ */
+export function matchUrl(url: string, pattern: UrlPattern): boolean {
+    if (Array.isArray(pattern)) {
+        return pattern.some(p => matchUrl(url, p));
+    }
+    if (pattern instanceof RegExp) {
+        return pattern.test(url);
+    }
+    if (typeof pattern === 'object' && pattern !== null) {
+        try {
+            const requestPath = new URL(url, window.location.origin).pathname;
+            const targetPath = new URL(pattern.pathname, window.location.origin).pathname;
+            return requestPath === targetPath;
+        } catch (error) {
+            return url.includes(pattern.pathname);
+        }
+    }
+    return url.includes(pattern);
+}
+
+/**
  * @class NetworkHook
  * @description 网络通讯挂钩基建。通过侵入式重写 XHR 与 Fetch 原型链，提供无感知的 HTTP 头部嗅探与响应报文重组功能。
  */
@@ -66,6 +99,18 @@ export class NetworkHook {
             this.responseInterceptors[existingIndex] = interceptor;
         } else {
             this.responseInterceptors.push(interceptor);
+        }
+    }
+
+    /**
+     * @method unregisterResponseInterceptor
+     * @description 按 ID 移除已注册的响应拦截器，供模块生命周期回收（destroy 时调用）。
+     * @param {string} id 拦截器唯一标识
+     */
+    public unregisterResponseInterceptor(id: string): void {
+        const index = this.responseInterceptors.findIndex(i => i.id === id);
+        if (index !== -1) {
+            this.responseInterceptors.splice(index, 1);
         }
     }
 

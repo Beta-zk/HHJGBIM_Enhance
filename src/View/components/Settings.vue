@@ -103,8 +103,7 @@
 <script setup lang="ts">
 import { reactive, onMounted, ref, onUnmounted, watch, nextTick } from 'vue';
 import { settings, type IUserSettings } from '../../config/settings';
-import { API_URLS } from '../../config/constants';
-import { GMHttpClient } from '../../core/GMHttpClient';
+import { systemService } from '../../services/SystemService';
 import { showToast } from '../../utils/helpers';
 
 const emit = defineEmits(['close']);
@@ -172,8 +171,7 @@ const checkPing = async () => {
     }
     pingStatus.value = 'loading';
     try {
-        const targetUrl = `${formState.crawlerDomain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_PING_PATH}`;
-        const res = await GMHttpClient.post(targetUrl, {});
+        const res = await systemService.pingAt(formState.crawlerDomain, {});
         pingStatus.value = (res && res.status === 'success') ? 'success' : 'error';
     } catch (error) {
         pingStatus.value = 'error';
@@ -192,8 +190,7 @@ const triggerInit = async () => {
     currentStep.value = '请求建立任务...';
     
     try {
-        const targetUrl = `${formState.crawlerDomain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_INT_PATH}`;
-        const res = await GMHttpClient.post(targetUrl, {});
+        const res = await systemService.systemIntAt(formState.crawlerDomain, {});
         
         if (res && res.status === 'success' && res.taskId) {
             showToast('初始化任务已进入后台队列', true);
@@ -213,8 +210,7 @@ const startPolling = (taskId: string) => {
     
     pollTimer = setInterval(async () => {
         try {
-            const progressUrl = `${formState.crawlerDomain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_PROGRESS_PATH}`;
-            const res = await GMHttpClient.post(progressUrl, { taskId });
+            const res = await systemService.getTaskProgress(taskId, formState.crawlerDomain);
             
             if (res) {
                 progressValue.value = res.progress || 0;

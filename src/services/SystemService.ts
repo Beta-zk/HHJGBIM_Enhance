@@ -62,6 +62,43 @@ class SystemService {
         const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_SYSTEM_INT_PATH}`;
         return await GMHttpClient.postWithAuth(url, params);
     }
+
+    /**
+     * @method pingAt
+     * @description 向指定域名探活（设置面板预探测未保存地址用）：不走探活缓存、不等待鉴权凭证。
+     * @param {string} domain 目标服务地址
+     * @param {Record<string, any>} [params={}] 探活载荷
+     * @returns {Promise<any>} 探活响应，失败返回 null
+     */
+    public async pingAt(domain: string, params: Record<string, any> = {}): Promise<any> {
+        const url = `${domain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_PING_PATH}`;
+        return await GMHttpClient.post(url, params);
+    }
+
+    /**
+     * @method systemIntAt
+     * @description 向指定域名触发全量数据初始化任务（设置面板预配置地址用）。
+     * @param {string} domain 目标服务地址
+     * @param {Record<string, any>} [params={}] 初始化指令载荷
+     * @returns {Promise<any>} 任务受理结果（含 taskId），失败返回 null
+     */
+    public async systemIntAt(domain: string, params: Record<string, any> = {}): Promise<any> {
+        const url = `${domain.replace(/\/$/, '')}${API_URLS.LOCAL_SYSTEM_INT_PATH}`;
+        return await GMHttpClient.post(url, params);
+    }
+
+    /**
+     * @method getTaskProgress
+     * @description 查询初始化任务执行进度（可指定域名，缺省使用已保存配置）。
+     * @param {string} taskId 任务标识
+     * @param {string} [domain] 目标服务地址，缺省取已保存配置
+     * @returns {Promise<any>} 进度报文（含 progress/current_step/status），失败返回 null
+     */
+    public async getTaskProgress(taskId: string, domain?: string): Promise<any> {
+        const base = (domain || settings.get().crawlerDomain).replace(/\/$/, '');
+        const url = `${base}${API_URLS.LOCAL_SYSTEM_PROGRESS_PATH}`;
+        return await GMHttpClient.post(url, { taskId });
+    }
 }
 
 export const systemService = new SystemService();

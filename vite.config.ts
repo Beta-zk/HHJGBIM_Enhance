@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import monkey, { cdn } from "vite-plugin-monkey";
 import vue from "@vitejs/plugin-vue";
+import pkg from "./package.json";
 
 export default defineConfig({
   plugins: [
@@ -10,7 +11,7 @@ export default defineConfig({
       userscript: {
         name: "HHJGBIM_Enhance",
         namespace: "http://tampermonkey.net/",
-        version: "0.4.5",
+        version: pkg.version,
         description: "华泓精工比姆泰克增强脚本 by 江西华泓精工",
         match: ["*://*.bimtk.com/*"],
         grant: ["GM_xmlhttpRequest"],

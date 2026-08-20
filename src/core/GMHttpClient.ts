@@ -10,12 +10,13 @@ export class GMHttpClient {
     /**
      * @method post
      * @description 执行 POST 提权请求，自动反序列化响应体并实施鉴权状态审计。
+     * @template T 响应体解析类型
      * @param {string} url 目标绝对寻址
      * @param {any} payload 数据载荷
-     * @returns {Promise<any>} 反序列化后的响应体，失败或 401 熔断时返回 null
+     * @returns {Promise<T | null>} 反序列化后的响应体，失败或 401 熔断时返回 null
      */
-    public static async post(url: string, payload: any): Promise<any> {
-        return new Promise((resolve) => {
+    public static async post<T = any>(url: string, payload: any): Promise<T | null> {
+        return new Promise<T | null>((resolve) => {
             if (typeof GM_xmlhttpRequest === 'undefined') {
                 console.error('[Network] 提权环境缺失，GM_xmlhttpRequest 未注册');
                 resolve(null);
@@ -38,7 +39,7 @@ export class GMHttpClient {
                                 resolve(null);
                                 return;
                             }
-                            resolve(json);
+                            resolve(json as T);
                         } catch (error) {
                             resolve(null);
                         }
@@ -57,12 +58,13 @@ export class GMHttpClient {
      * @method postWithAuth
      * @description 带凭证就绪约束的 POST：先闭锁等待鉴权凭证就绪，再执行提权请求。
      * 数据服务统一走此入口，收敛「waitForToken + post + 空响应归一化」的重复链路。
+     * @template T 响应体解析类型
      * @param {string} url 目标绝对寻址
      * @param {any} [payload={}] 数据载荷
-     * @returns {Promise<any>} 反序列化后的响应体，失败返回 null
+     * @returns {Promise<T | null>} 反序列化后的响应体，失败返回 null
      */
-    public static async postWithAuth(url: string, payload: any = {}): Promise<any> {
+    public static async postWithAuth<T = any>(url: string, payload: any = {}): Promise<T | null> {
         await authService.waitForToken();
-        return await GMHttpClient.post(url, payload);
+        return await GMHttpClient.post<T>(url, payload);
     }
 }
