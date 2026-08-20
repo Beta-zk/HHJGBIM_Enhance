@@ -102,48 +102,6 @@ export function showToast(
 }
 
 /**
- * @function waitForCondition
- * @description 通用异步轮询断言器，支持复杂结构解析与挂载阻断。
- * @param {Function} conditionFn 寻址闭包，返回 Truthy 表示寻址成功
- * @param {number} [maxAttempts=20] 最大轮询次数
- * @param {number} [intervalMs=500] 轮询间隔(ms)
- * @returns {Promise<T>}
+ * @note DOM 等待原语（waitForCondition / waitForElement）已迁移至 core/DomMaster，
+ * 本文件仅保留与宿主页面结构无关的通用 UI 工具。
  */
-export function waitForCondition<T>(
-    conditionFn: () => T | false | null | undefined,
-    maxAttempts: number = 20,
-    intervalMs: number = 500
-): Promise<T> {
-    return new Promise((resolve, reject) => {
-        let attempts = 0;
-        const timer = setInterval(() => {
-            attempts++;
-            const result = conditionFn();
-            if (result) {
-                clearInterval(timer);
-                resolve(result);
-            } else if (attempts >= maxAttempts) {
-                clearInterval(timer);
-                reject(new Error(`[DOM] 轮询断言超时`));
-            }
-        }, intervalMs);
-    });
-}
-
-/**
- * @function waitForElement
- * @description 单一节点异步寻址器（waitForCondition 的语法糖）
- */
-export function waitForElement(
-    selector: string,
-    maxAttempts: number = 20,
-    intervalMs: number = 500
-): Promise<HTMLElement> {
-    return waitForCondition(
-        () => document.querySelector(selector) as HTMLElement | null,
-        maxAttempts,
-        intervalMs
-    ).catch(() => {
-        throw new Error(`[DOM] 节点轮询寻址超时: ${selector}`);
-    });
-}

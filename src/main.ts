@@ -1,5 +1,6 @@
 import './style.css';
 import { NetworkHook } from './core/NetworkHook';
+import { domMaster } from './core/DomMaster';
 import { authService } from './services/AuthService';
 import { ProjectStateEnhance } from './core/ProjectStateEnhance';
 import { ProductionIntegrationBigScreenEnhance } from './core/ProductionIntegrationBigScreenEnhance';
@@ -18,8 +19,9 @@ import App from './view/App.vue';
     
     const userConfig = settings.get();
 
-    // 激活底层网络劫持总线
+    // 激活底层网络劫持总线与页面情报缓存引擎
     NetworkHook.getInstance().init();
+    domMaster.init();
     authService.initObserver();
 
     // 级联注入各功能面增强引擎

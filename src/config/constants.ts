@@ -1,10 +1,9 @@
 /**
  * @constant API_URLS
  * @description 系统级路由注册中心。统一管理宿主平台绝对寻址与本地爬虫微服务相对寻址，支撑网络层的流量分发。
+ * 使用 as const 固化字面量类型，key 拼写错误将在编译期暴露。
  */
 export const API_URLS = {
-    LOGIN: 'https://integ-plat-api.bimtk.com/Platform/Login/Login',
-    OUT_LOGIN: 'https://integ-plat-api.bimtk.com/Platform/Login/OutLogin',
     WAREHOUSE_DATA_STATS: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionCount/GetProjectWarehouseDataStatistics',
     PLM_PROJECT_ENTITIES: 'https://integ-plat-proj-api.bimtk.com/PLM/Plm_Projects/GetEntities',
     MONTHLY_FACTORY_OUTPUT: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionCount/MonthlyFactoyOutput',
@@ -19,4 +18,4 @@ export const API_URLS = {
     GET_COMP_SCHDULING_PAGE_LIST: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingPageList',
     GET_COMP_SCHDULING_INFO_DETAIL: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingInfoDetail',
     GET_RAW_WH_SUMMARY_LIST: 'https://integ-plat-produce-api.bimtk.com/PRO/MaterielInventory/GetRawWHSummaryList'
-};
+} as const;

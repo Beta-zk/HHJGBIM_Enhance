@@ -1,31 +1,28 @@
 import { API_URLS } from '../config/constants';
 import { GMHttpClient } from '../core/GMHttpClient';
-import { authService } from './AuthService';
 import { settings } from '../config/settings';
 
 /**
  * @class FactoryService
- * @description 工厂级产能调度器。执行由调用方约束的路由切换，全量剔除应用层延时干预。
+ * @description 工厂产能数据网关。拉取月度综合产出指标，优先走本地爬虫链路，失败时降级到宿主接口。
  */
 class FactoryService {
     
     /**
      * @method fetchMonthlyOutput
-     * @description 拉取月度综合产出指标。
+     * @description 拉取月度综合产出指标：本地链路返回空时自动降级到宿主接口。
      * @param {string} [year] 指定年份
      * @param {boolean} [useLocal=false] 是否启用本地爬虫链路
      * @returns {Promise<any>}
      */
     public async fetchMonthlyOutput(year?: string, useLocal: boolean = false): Promise<any> {
-        await authService.waitForToken();
-        
         const targetYear = year || new Date().getFullYear().toString();
         const payload = { year: targetYear };
 
         if (useLocal) {
             try {
                 const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_FACTORY_YEAR_OUTPUT_PATH}`;
-                const localData = await GMHttpClient.post(url, payload);
+                const localData = await GMHttpClient.postWithAuth(url, payload);
                 if (localData && Object.keys(localData).length > 0) {
                     return localData;
                 }
@@ -34,7 +31,7 @@ class FactoryService {
             }
         }
         
-        return await GMHttpClient.post(API_URLS.MONTHLY_FACTORY_OUTPUT, payload);
+        return await GMHttpClient.postWithAuth(API_URLS.MONTHLY_FACTORY_OUTPUT, payload);
     }
 }
 

@@ -1,12 +1,17 @@
 import { NetworkHook } from './NetworkHook';
-import { waitForCondition } from '../utils/helpers';
+import { domMaster } from './DomMaster';
 
 /**
  * @class ProductionIntegrationBigScreenEnhance
  * @description 生产看板交互增强引擎。通过监听特定数据接口触发 DOM 轮询机制，实施无侵入式的元素劫持与点击穿透路由绑定。
+ * DOM 等待与菜单点击模拟委托给 DomMaster。
  */
 export class ProductionIntegrationBigScreenEnhance {
     
+    /**
+     * @method init
+     * @description 向网络劫持总线注册大屏配置接口拦截器，响应到达后触发看板交互注入。
+     */
     public init(): void {
         NetworkHook.getInstance().registerResponseInterceptor({
             id: 'INTERCEPTOR_BIG_SCREEN_CONFIG',
@@ -18,8 +23,12 @@ export class ProductionIntegrationBigScreenEnhance {
         });
     }
 
+    /**
+     * @method injectDomInteraction
+     * @description 轮询等待看板两个指标卡片就位，为第三项数值绑定点击事件以跳转对应报表菜单（幂等，由标记属性防重）。
+     */
     private injectDomInteraction(): void {
-        waitForCondition(() => {
+        domMaster.waitForCondition(() => {
             const rightBoxes = document.querySelectorAll('.content_box .box .right-box');
             if (rightBoxes.length < 2) return false;
 
@@ -57,20 +66,13 @@ export class ProductionIntegrationBigScreenEnhance {
         });
     }
 
+    /**
+     * @method triggerSidebarMenuClick
+     * @description 点击侧边栏中文本匹配的目标菜单项，未命中时输出错误日志。
+     * @param {string} targetText 菜单文本关键字
+     */
     private triggerSidebarMenuClick(targetText: string): void {
-        const menuItems = document.querySelectorAll('.ep-menu-item');
-        let isMatchFound = false;
-
-        for (let i = 0; i < menuItems.length; i++) {
-            const item = menuItems[i] as HTMLElement;
-            if (item.textContent && item.textContent.includes(targetText)) {
-                item.click();
-                isMatchFound = true;
-                break;
-            }
-        }
-
-        if (!isMatchFound) {
+        if (!domMaster.clickElementByText('.ep-menu-item', targetText)) {
             console.error(`[UI] 导航节点索引失败: ${targetText}`);
         }
     }

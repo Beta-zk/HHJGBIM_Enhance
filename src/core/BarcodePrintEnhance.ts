@@ -1,13 +1,19 @@
 import { NetworkHook } from './NetworkHook';
 import { schdulingService } from '../services/SchdulingService';
-import { showToast, waitForElement } from '../utils/helpers';
+import { domMaster } from './DomMaster';
+import { showToast } from '../utils/helpers';
 
 /**
  * @class BarcodePrintEnhance
- * @description 条码打印增强引擎。基于特定业务流接口的响应触发 DOM 轮询，无缝注入外部构件获取控件并实现检索与视图联动。
+ * @description 条码打印增强引擎。监听条码读取配置接口，在打印页注入排产单号查询控件，
+ * 检索构件条码后自动级联选中所属项目并触发查询。页面控件构建与交互委托给 DomMaster，本类仅保留查询流程编排与级联时序。
  */
 export class BarcodePrintEnhance {
     
+    /**
+     * @method init
+     * @description 注入打印页表格高度修正样式，并向网络劫持总线注册条码读取接口的响应拦截器。
+     */
     public init(): void {
         this.applyTemporaryUiFix();
 
@@ -21,23 +27,25 @@ export class BarcodePrintEnhance {
         });
     }
 
+    /**
+     * @method applyTemporaryUiFix
+     * @description 注入临时样式，约束打印页表格容器最大高度，避免长列表撑破布局。
+     */
     private applyTemporaryUiFix(): void {
-        const STYLE_ID = 'temp-fix-table-wrapper-height';
-        if (document.getElementById(STYLE_ID)) return;
-
-        const styleElement = document.createElement('style');
-        styleElement.id = STYLE_ID;
-        styleElement.type = 'text/css';
-        styleElement.innerHTML = `
+        domMaster.injectStyle('temp-fix-table-wrapper-height', `
             .table-main .dynamic-table .t-wrapper {
                 max-height: 400px !important;
             }
-        `;
-        (document.head || document.documentElement).appendChild(styleElement);
+        `);
     }
 
+    /**
+     * @method injectDomInteraction
+     * @description 在条码打印页的排产单输入区旁注入「排产单号 + 查询按钮」控件组（幂等），
+     * 点击后调用排产服务获取构件条码并回填文本框，随后级联选中所属项目并自动触发查询。
+     */
     private injectDomInteraction(): void {
-        waitForElement('.el-textarea__inner')
+        domMaster.waitForElement('.el-textarea__inner')
             .then((targetElement) => {
                 const targetTextarea = targetElement as HTMLTextAreaElement;
                 const elTextarea = targetTextarea.closest('.el-textarea');
@@ -47,18 +55,48 @@ export class BarcodePrintEnhance {
                         elTextarea.parentElement.style.display = 'flex';
                         elTextarea.parentElement.style.alignItems = 'flex-start';
 
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'hhjg-barcode-wrapper';
-                        wrapper.style.cssText = 'display: flex; align-items: flex-start; margin-left: 20px; gap: 10px;';
+                        const wrapper = domMaster.createElement('div', {
+                            className: 'hhjg-barcode-wrapper',
+                            styles: {
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                marginLeft: '20px',
+                                gap: '10px'
+                            }
+                        });
 
-                        const input = document.createElement('input');
-                        input.type = 'text';
-                        input.placeholder = '请输入排产单号...';
-                        input.style.cssText = 'width: 150px; height: 32px; padding: 0 10px; border: 1px solid #dcdfe6; border-radius: 4px; outline: none; font-size: 14px; color: #606266;';
+                        const input = domMaster.createElement('input', {
+                            attributes: {
+                                type: 'text',
+                                placeholder: '请输入排产单号...'
+                            },
+                            styles: {
+                                width: '150px',
+                                height: '32px',
+                                padding: '0 10px',
+                                border: '1px solid #dcdfe6',
+                                borderRadius: '4px',
+                                outline: 'none',
+                                fontSize: '14px',
+                                color: '#606266'
+                            }
+                        });
 
-                        const btn = document.createElement('button');
-                        btn.textContent = '查询所属构件';
-                        btn.style.cssText = 'height: 32px; padding: 0 15px; background: #409eff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; font-size: 14px; transition: background-color 0.3s;';
+                        const btn = domMaster.createElement('button', {
+                            text: '查询所属构件',
+                            styles: {
+                                height: '32px',
+                                padding: '0 15px',
+                                background: '#409eff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                fontSize: '14px',
+                                transition: 'background-color 0.3s'
+                            }
+                        });
 
                         btn.onmouseover = () => { if (!btn.disabled) btn.style.background = '#66b1ff'; };
                         btn.onmouseout = () => { if (!btn.disabled) btn.style.background = '#409eff'; };
@@ -83,30 +121,25 @@ export class BarcodePrintEnhance {
                                 if (!compCodes || compCodes.length === 0) {
                                     showToast('未查找到对应的构件矩阵数据', false);
                                 } else {
-                                    targetTextarea.value = compCodes.join('\n');
-                                    targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-                                    targetTextarea.dispatchEvent(new Event('change', { bubbles: true }));
+                                    domMaster.setValueAndNotify(targetTextarea, compCodes.join('\n'));
                                     
                                     showToast(`检索完毕，共装载 ${compCodes.length} 项构件条码，正在自动校验联动环境...`, true);
 
                                     setTimeout(() => {
                                         if (projectName) {
-                                            const dropdownSpans = Array.from(document.querySelectorAll('.el-select-dropdown__item span'));
-                                            const targetSpan = dropdownSpans.find(span => span.textContent && span.textContent.includes(projectName)) as HTMLElement;
+                                            const targetSpan = domMaster.findElementByText('.el-select-dropdown__item span', projectName);
 
                                             if (targetSpan) {
                                                 const parentLi = targetSpan.closest('.el-select-dropdown__item') as HTMLElement;
                                                 if (parentLi) parentLi.click();
                                                 else targetSpan.click();
-                                                console.log(`[UI] 自动化级联触发：成功映射并锁定宿主项目域 [${projectName}]`);
                                             } else {
                                                 console.warn(`[UI] 节点遍历阻断：未能寻址到隶属 "${projectName}" 的节点`);
                                             }
                                         }
 
                                         setTimeout(() => {
-                                            const buttons = Array.from(document.querySelectorAll('.filters button'));
-                                            const searchBtn = buttons.find(b => b.textContent && b.textContent.includes('查询')) as HTMLButtonElement;
+                                            const searchBtn = domMaster.findElementByText('.filters button', '查询') as HTMLButtonElement | null;
                                             
                                             if (searchBtn) searchBtn.click();
                                             else console.warn('[UI] 联动事件异常熔断：终端 DOM 树中缺失关键“查询”交互节点');

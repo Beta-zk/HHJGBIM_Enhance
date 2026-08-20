@@ -1,59 +1,44 @@
 import { API_URLS } from '../config/constants';
 import { GMHttpClient } from '../core/GMHttpClient';
-import { authService } from './AuthService';
 import { settings } from '../config/settings';
 
 /**
  * @class ComponentService
- * @description 构件数据链路仓。面向本地爬虫微服务提供隔离化的异步调度模型，规避对原始宿主接口的高频访问压力。
+ * @description 构件深化重量数据网关。面向本地爬虫微服务提供年度/月度权重查询，避免高频访问宿主接口。
  */
 class ComponentService {
     
     /**
      * @method getYearWeight
-     * @description 投递异步查询，获取构件域在全量时间轴下的权重矩阵。
-     * @param {Record<string, any>} [params={}]
-     * @returns {Promise<any>}
+     * @description 查询构件域在全量时间轴下的年度权重矩阵。
+     * @param {Record<string, any>} [params={}] 查询载荷
+     * @returns {Promise<any>} 权重矩阵数据，失败返回 null
      */
     public async getYearWeight(params: Record<string, any> = {}): Promise<any> {
-        await authService.waitForToken();
-        
         const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_COMPONENT_WEIGHT_PATH}`;
-        const response = await GMHttpClient.post(url, params);
-        
-        if (!response) {
-            return null;
-        }
-        return response;
+        return await GMHttpClient.postWithAuth(url, params);
     }
 
     /**
      * @method getMonthWeight
-     * @description 提供复合维度的检索映射接口，输出构件周期态势。
+     * @description 按统计周期与执行人查询构件月度权重。
      * @param {string} [month] 统计周期 (YYYY-MM)
      * @param {string} [createUser] 指标执行人
-     * @returns {Promise<any>}
+     * @returns {Promise<any>} 月度权重数据，失败返回 null
      */
     public async getMonthWeight(month?: string, createUser?: string): Promise<any> {
-        await authService.waitForToken();
-        
         let url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_COMPONENT_MONTH_WEIGHT_PATH}`;
-        
+
         const queryParams = new URLSearchParams();
         if (month) queryParams.append('month', month);
         if (createUser) queryParams.append('createUser', createUser);
-        
+
         const queryString = queryParams.toString();
         if (queryString) {
             url += `?${queryString}`;
         }
-        
-        const response = await GMHttpClient.post(url, {});
-        
-        if (!response) {
-            return null;
-        }
-        return response;
+
+        return await GMHttpClient.postWithAuth(url, {});
     }
 }
 

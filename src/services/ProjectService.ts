@@ -1,11 +1,11 @@
 import { API_URLS } from "../config/constants";
 import { GMHttpClient } from "../core/GMHttpClient";
-import { authService } from "./AuthService";
 import { settings } from "../config/settings";
 
 /**
  * @class ProjectService
- * @description 实体状态同步网关。接受外部路由调度，执行严谨的并发闭锁，全量剔除应用层延时干预。
+ * @description 项目实体字典网关。向宿主或本地爬虫源拉取 PLM 项目实体，
+ * 提供并发闭锁（并发调用共享同一请求）与结果缓存，避免重复通讯。
  */
 class ProjectService {
   private cachedPlmJson: any = null;
@@ -25,8 +25,6 @@ class ProjectService {
     if (this.cachedPlmJson) return Promise.resolve(this.cachedPlmJson);
     if (this.fetchPromise) return this.fetchPromise;
 
-    await authService.waitForToken();
-
     this.fetchPromise = this.executeFetchStrategy(useLocal).then((json) => {
       if (json) {
         this.cachedPlmJson = json;
@@ -43,7 +41,7 @@ class ProjectService {
     if (useLocal) {
         try {
             const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_PROJECT_INFO_PATH}`;
-            const localData = await GMHttpClient.post(url, {});
+            const localData = await GMHttpClient.postWithAuth(url, {});
             if (localData && Array.isArray(localData) && localData.length > 0) {
               return { Data: localData };
             }
@@ -52,7 +50,7 @@ class ProjectService {
         }
     }
 
-    return await GMHttpClient.post(
+    return await GMHttpClient.postWithAuth(
       API_URLS.PLM_PROJECT_ENTITIES,
       this.defaultPayload,
     );

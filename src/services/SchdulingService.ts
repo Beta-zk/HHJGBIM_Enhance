@@ -1,6 +1,5 @@
 import { API_URLS } from '../config/constants';
 import { GMHttpClient } from '../core/GMHttpClient';
-import { authService } from './AuthService';
 
 /**
  * @interface ISchdulingOptionalParams
@@ -48,8 +47,6 @@ class SchdulingService {
             throw new Error('[SchdulingService] Schduling_Code 不允许为空');
         }
 
-        await authService.waitForToken();
-        
         const pagePayload = {
             Page: 1,
             PageSize: 5000,
@@ -65,7 +62,7 @@ class SchdulingService {
             ...optionalParams
         };
 
-        const pageRes = await GMHttpClient.post(API_URLS.GET_COMP_SCHDULING_PAGE_LIST, pagePayload);
+        const pageRes = await GMHttpClient.postWithAuth(API_URLS.GET_COMP_SCHDULING_PAGE_LIST, pagePayload);
         
         if (!pageRes || !pageRes.Data || !Array.isArray(pageRes.Data.Data)) {
             throw new Error('[SchdulingService] 排产分页请求失败或结构异常');
@@ -89,7 +86,7 @@ class SchdulingService {
         }
 
         const detailPayload = { Schduling_Plan_Id: targetSchdulingId };
-        const detailRes = await GMHttpClient.post(API_URLS.GET_COMP_SCHDULING_INFO_DETAIL, detailPayload);
+        const detailRes = await GMHttpClient.postWithAuth(API_URLS.GET_COMP_SCHDULING_INFO_DETAIL, detailPayload);
 
         if (!detailRes || !detailRes.Data || !Array.isArray(detailRes.Data.Schduling_Comps)) {
             throw new Error('[SchdulingService] 详情提取请求失败或映射域结构失效');
