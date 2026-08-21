@@ -6,9 +6,8 @@ import type { IDraggablePanel } from '../../core/DomMaster';
 import type { IEnhanceModule, ModuleContext } from '../../kernel/module.types';
 
 const STATE_ENHANCE_STYLES = `
-    .hhjg-state-row-enhanced { height: 62px !important; }
-    .hhjg-state-cell-enhanced { position: relative !important; max-height: none !important; white-space: normal !important; line-height: 1.2 !important; }
-    .hhjg-state-indicator { position: absolute; top: 4px; left: 4px; width: 8px; height: 8px; border-radius: 50%; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 10; pointer-events: none; }
+    .hhjg-state-cell-enhanced { position: relative !important; padding-left: 16px !important; }
+    .hhjg-state-indicator { position: absolute; top: 50%; left: 4px; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 10; pointer-events: none; }
     
     .hhjg-state-btn { 
         width: 80px; 
