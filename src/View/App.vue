@@ -29,6 +29,9 @@
     :personnel-matrix="personnelReportData" :crawl-date="reportCrawlDate" @close="showReport = false" />
 
   <Settings v-if="showSettings" @close="showSettings = false" />
+  
+  <!-- 全局插件组件动态装配区（沙箱映射） -->
+  <component v-for="[id, comp] in uiStore.activeComponents" :is="comp" :key="id" />
 </template>
 
 <script setup lang="ts">
@@ -38,6 +41,7 @@ import { componentService } from '../services/ComponentService';
 import { systemService } from '../services/SystemService';
 import { settings } from '../config/settings';
 import { showToast } from '../utils/helpers';
+import { uiStore } from '../kernel/uiStore';
 import type { FactoryMonthItem, PersonnelMatrix, PersonnelWeight } from '../types';
 import PerformanceReport from './components/PerformanceReport.vue';
 import Settings from './components/Settings.vue';
