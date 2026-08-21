@@ -28,7 +28,7 @@ class ProjectStateEnhance implements IEnhanceModule {
         onResponse: (originalJson: any) => {
             if (this.dictPromise) {
                 this.dictPromise.then(() => {
-                    if (this.checkWhitelistMatch()) {
+                    if (!this.checkBlacklistMatch()) {
                         this.extractFilterStates(originalJson);
                     }
                 });
@@ -53,10 +53,6 @@ class ProjectStateEnhance implements IEnhanceModule {
     private dictPromise: Promise<void> | null = null;
 
     private readonly BLACKLIST_ROUTES = ['/project/plm/projectmanagement'];
-    private readonly WHITELIST_ROUTES = [
-        '/produce/pro/project-inventory',
-        '/produce/pro/progress_track'
-    ];
 
     private readonly LOGICAL_ORDER = [
         '投标', '中标未开工', '中标停工', '局部开工', '全面开工', 
@@ -70,7 +66,7 @@ class ProjectStateEnhance implements IEnhanceModule {
         '临时停工': '#f56c6c',       
         '局部开工': '#e6a23c',       
         '全面开工': '#e6a23c',       
-        '收尾': '#67c23a',           
+        '收尾': '#e6a23c',           
         '完工未验收': '#67c23a',     
         '完工已验收': '#67c23a'      
     };
@@ -145,10 +141,6 @@ class ProjectStateEnhance implements IEnhanceModule {
         return this.ctx.dom.isUrlMatch(this.BLACKLIST_ROUTES);
     }
 
-    private checkWhitelistMatch(): boolean {
-        return this.ctx.dom.isUrlMatch(this.WHITELIST_ROUTES);
-    }
-
     private cleanupAll(): void {
         projectStateStore.isVisible = false;
 
@@ -164,22 +156,11 @@ class ProjectStateEnhance implements IEnhanceModule {
         this.ctx.dom.querySelectorAll<HTMLElement>('.hhjg-state-indicator').forEach(indicator => indicator.remove());
     }
 
-    private extractFilterStates(originalJson?: any): void {
-        if (!this.checkWhitelistMatch()) return;
-
-        const viewStates = new Set<string>();
-        if (originalJson && originalJson.Data && Array.isArray(originalJson.Data.Data)) {
-            originalJson.Data.Data.forEach((item: any) => {
-                const name = item.Project_Name || item.Name || '';
-                const state = this.matchMap.get(name);
-                if (state) viewStates.add(state);
-            });
-        }
-        
-        const statesToRender = viewStates.size > 0 ? viewStates : this.uniqueStates;
+    private populateFilterStates(viewStates?: Set<string>): void {
+        const statesToRender = (viewStates && viewStates.size > 0) ? viewStates : this.uniqueStates;
         this.totalStatesCount = statesToRender.size;
         
-        const defaultExcludedStates = new Set(['收尾', '完工未验收', '完工已验收']);
+        const defaultExcludedStates = new Set(['完工未验收', '完工已验收']);
         
         projectStateStore.activeStates.clear();
         Array.from(statesToRender).forEach(state => {
@@ -197,7 +178,24 @@ class ProjectStateEnhance implements IEnhanceModule {
             color: this.getBadgeColor(state)
         }));
 
-        projectStateStore.isVisible = true;
+        if (projectStateStore.states.length > 0) {
+            projectStateStore.isVisible = true;
+        }
+    }
+
+    private extractFilterStates(originalJson?: any): void {
+        if (this.checkBlacklistMatch()) return;
+
+        const viewStates = new Set<string>();
+        if (originalJson && originalJson.Data && Array.isArray(originalJson.Data.Data)) {
+            originalJson.Data.Data.forEach((item: any) => {
+                const name = item.Project_Name || item.Name || '';
+                const state = this.matchMap.get(name);
+                if (state) viewStates.add(state);
+            });
+        }
+        
+        this.populateFilterStates(viewStates);
         this.debounceScan();
     }
 
@@ -239,16 +237,9 @@ class ProjectStateEnhance implements IEnhanceModule {
             return;
         }
 
-        const isWhitelist = this.checkWhitelistMatch();
-        
-        if (isWhitelist && projectStateStore.states.length > 0) {
-            projectStateStore.isVisible = true;
-        } else if (!isWhitelist) {
-            this.cleanupAll();
-        }
-
         const allTrs = this.ctx.dom.querySelectorAll<HTMLElement>(ProjectListHost.ROW_SELECTOR);
         const vxeRowMap = new Map<string, string>();
+        const domStates = new Set<string>();
 
         type RowMeta = {
             tr: HTMLElement;
@@ -270,6 +261,7 @@ class ProjectStateEnhance implements IEnhanceModule {
                     if (rowid) {
                         vxeRowMap.set(rowid, matchedState);
                     }
+                    domStates.add(matchedState);
                     break;
                 }
             }
@@ -277,7 +269,13 @@ class ProjectStateEnhance implements IEnhanceModule {
             return { tr, rowid, matchedState, targetElement };
         });
 
-        const isFilterContext = isWhitelist && projectStateStore.isVisible;
+        if (domStates.size > 0 && (!projectStateStore.isVisible || projectStateStore.states.length === 0)) {
+            this.populateFilterStates(domStates);
+        } else if (domStates.size === 0 && projectStateStore.states.length === 0) {
+            projectStateStore.isVisible = false;
+        }
+
+        const isFilterContext = projectStateStore.isVisible;
 
         parsedRows.forEach(meta => {
             let finalState = meta.matchedState;
