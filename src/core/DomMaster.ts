@@ -469,17 +469,21 @@ export class DomMaster {
 
     /**
      * @method upsertIndicator
-     * @description 状态圆点指示器：不存在则创建，存在则仅同步颜色。
+     * @description 状态圆点指示器：不存在则创建（可选绑定点击回调），存在则仅同步颜色。
      * @param {HTMLElement} container 宿主元素
      * @param {string} color 圆点颜色
+     * @param {(e: MouseEvent) => void} [onClick] 圆点点击回调（仅首次创建时绑定）
      */
-    public upsertIndicator(container: HTMLElement, color: string): void {
+    public upsertIndicator(container: HTMLElement, color: string, onClick?: (e: MouseEvent) => void): void {
         let indicator = container.querySelector<HTMLElement>(':scope > .hhjg-state-indicator');
         if (!indicator) {
             indicator = this.createElement('span', {
                 className: 'hhjg-state-indicator',
                 styles: { backgroundColor: color }
             });
+            if (onClick) {
+                indicator.addEventListener('click', onClick);
+            }
             container.appendChild(indicator);
         } else if (indicator.style.backgroundColor !== color) {
             indicator.style.backgroundColor = color;

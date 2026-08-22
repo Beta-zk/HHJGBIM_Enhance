@@ -1,25 +1,12 @@
 <template>
-  <!-- 独立弹窗：挂载至 body，与页面表格无关联 -->
+  <!-- 独立悬浮窗：挂载至 body，由表格状态圆点点击触发弹出，默认定位表格左上角 -->
   <Teleport to="body">
     <div v-if="store.isVisible"
          ref="widgetRef"
          class="hhjg-state-widget"
-         :class="{ 'is-expanded': isExpanded }"
          :style="{ left: position.x + 'px', top: position.y + 'px' }">
 
-      <!-- 标签形态：常驻可点击小球，点击弹出悬浮窗 -->
-      <div v-if="!isExpanded"
-           class="state-ball"
-           @mousedown="startDrag"
-           @click="toggleExpand"
-           title="点击打开生命周期筛选">
-        <svg viewBox="0 0 1024 1024" width="20" height="20">
-          <path d="M512 64a448 448 0 1 1 0 896 448 448 0 0 1 0-896z" fill="#409eff"/>
-          <path d="M704 384H320c-17.6 0-32 14.4-32 32s14.4 32 32 32h384c17.6 0 32-14.4 32-32s-14.4-32-32-32zM704 576H320c-17.6 0-32 14.4-32 32s14.4 32 32 32h384c17.6 0 32-14.4 32-32s-14.4-32-32-32z" fill="#ffffff"/>
-        </svg>
-      </div>
-
-      <!-- 悬浮窗形态：点击标签后弹出，全局可拖拽 -->
+      <!-- 悬浮窗形态：点击状态圆点弹出，全局可拖拽 -->
       <Transition name="pop">
         <div v-if="isExpanded"
              class="state-panel"
@@ -46,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { projectStateStore } from '../store';
 import { useDraggable } from '../../../utils/useDraggable';
 
@@ -56,10 +43,27 @@ const widgetRef = ref<HTMLElement | null>(null);
 
 // 全局自由拖拽（X/Y 双向），fixed 定位以视口为钳制边界
 const { position, startDrag, hasDragged } = useDraggable({
-  initialX: 8,
-  initialY: Math.round(window.innerHeight * 0.35),
   axis: 'both',
   containerRef: widgetRef
+});
+
+/** 面板默认位置：表格（vxe-table）左上角，取视口坐标供 fixed 定位 */
+const locateAtTableTopLeft = () => {
+  const csMain = document.querySelector('.cs-z-page-main-content .cs-main');
+  const table = csMain?.querySelector<HTMLElement>('.vxe-table') || csMain;
+  if (!table) return;
+  const rect = table.getBoundingClientRect();
+  position.value = {
+    x: Math.max(8, Math.round(rect.left + 8)),
+    y: Math.max(8, Math.round(rect.top + 8))
+  };
+};
+
+// 状态圆点点击 → 弹出悬浮窗并定位至表格左上角
+watch(() => store.panelTrigger, (count) => {
+  if (count <= 0) return;
+  locateAtTableTopLeft();
+  isExpanded.value = true;
 });
 
 const toggleExpand = (e: MouseEvent) => {
@@ -80,25 +84,6 @@ const onStateClick = (name: string) => {
   position: fixed;
   z-index: 8000;
   user-select: none;
-}
-
-/* 标签：常驻可点击小球 */
-.state-ball {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: box-shadow 0.2s, background-color 0.2s;
-}
-
-.state-ball:hover {
-  background-color: #f2f6fc;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* 悬浮窗：独立弹窗主题 */

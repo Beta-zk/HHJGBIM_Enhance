@@ -9,7 +9,7 @@ import ProjectFilterPanel from './view/ProjectFilterPanel.vue';
 
 const STATE_ENHANCE_STYLES = `
     .hhjg-state-cell-enhanced { position: relative !important; padding-left: 16px !important; }
-    .hhjg-state-indicator { position: absolute; top: 50%; left: 4px; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 10; pointer-events: none; }
+    .hhjg-state-indicator { position: absolute; top: 50%; left: 4px; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 10; pointer-events: auto; cursor: pointer; }
 `;
 
 class ProjectStateEnhance implements IEnhanceModule {
@@ -296,7 +296,15 @@ class ProjectStateEnhance implements IEnhanceModule {
 
                 if (targetElement) {
                     this.ctx.dom.addClass(targetElement, 'hhjg-state-cell-enhanced');
-                    this.ctx.dom.upsertIndicator(targetElement, this.getBadgeColor(finalState));
+                    this.ctx.dom.upsertIndicator(
+                        targetElement,
+                        this.getBadgeColor(finalState),
+                        (e) => {
+                            // 拦截冒泡防止触发行选中，仅向全局弹窗发出弹出请求
+                            e.stopPropagation();
+                            projectStateStore.requestPanel();
+                        }
+                    );
                 }
             } else {
                 this.ctx.dom.removeClass(tr, 'hhjg-state-row-enhanced');
