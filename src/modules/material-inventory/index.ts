@@ -79,7 +79,6 @@ class ProjectMaterialInventoryEnhance implements IEnhanceModule {
 
             originalJson.Data = filteredArray;
 
-            console.log(`[Middleware] 原材料仓数据序列洗牌成功，剔除空节点后剩余 ${filteredArray.length} 项有效实体`);
             return originalJson;
 
         } catch (error) {

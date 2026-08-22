@@ -145,7 +145,7 @@ const handleOpenReport = async () => {
     } else {
       showToast('核心工厂数据接口返回异常或无数据', false);
     }
-  } catch (error) {
+  } catch {
     showToast('网络请求彻底熔断', false);
   } finally {
     isLoading.value = false;

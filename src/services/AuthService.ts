@@ -48,6 +48,12 @@ class AuthService {
         });
     }
 
+    /**
+     * @method updateHeaders
+     * @description 嗅探会话头并落库：authorization 变更时持久化并唤醒等待中的闭锁；对象 ID 仅内存更新。
+     * @param {string} key 请求头名
+     * @param {string} value 请求头值
+     */
     public updateHeaders(key: string, value: string): void {
         const lowerKey = key.toLowerCase();
         if (!this.SESSION_HEADERS.has(lowerKey)) return;
@@ -89,10 +95,19 @@ class AuthService {
         }
     }
 
+    /**
+     * @method getHeaders
+     * @description 获取当前动态请求头集合（含授权凭证与对象 ID）。
+     * @returns {Record<string, string>}
+     */
     public getHeaders(): Record<string, string> {
         return this.dynamicHeaders;
     }
 
+    /**
+     * @method clearAuth
+     * @description 清除会话凭证：删除内存头与本地存储，并将凭证就绪状态复位。
+     */
     public clearAuth(): void {
         delete this.dynamicHeaders['authorization'];
         delete this.dynamicHeaders['last_working_object_id'];

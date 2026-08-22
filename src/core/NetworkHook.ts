@@ -35,7 +35,7 @@ export function matchUrl(url: string, pattern: UrlPattern): boolean {
             const requestPath = new URL(url, window.location.origin).pathname;
             const targetPath = new URL(pattern.pathname, window.location.origin).pathname;
             return requestPath === targetPath;
-        } catch (error) {
+        } catch {
             return url.includes(pattern.pathname);
         }
     }
@@ -159,7 +159,7 @@ export class NetworkHook {
                             const modifiedJson = matchedInterceptor.handler(originalJson, prefetchData);
                             cachedText = JSON.stringify(modifiedJson);
                             cachedResponse = xhrInstance.responseType === 'json' ? modifiedJson : cachedText;
-                        } catch (e) {
+                        } catch {
                             cachedText = originalResponseTextGetter ? originalResponseTextGetter.call(xhrInstance) : null;
                             cachedResponse = originalResponseGetter ? originalResponseGetter.call(xhrInstance) : null;
                         }
@@ -245,7 +245,7 @@ export class NetworkHook {
                             return typeof value === 'function' ? value.bind(target) : value;
                         }
                     });
-                } catch (error) {
+                } catch {
                     return response;
                 }
             }

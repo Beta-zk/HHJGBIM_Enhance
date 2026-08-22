@@ -100,8 +100,3 @@ export function showToast(
 
     attemptAppend();
 }
-
-/**
- * @note DOM 等待原语（waitForCondition / waitForElement）已迁移至 core/DomMaster，
- * 本文件仅保留与宿主页面结构无关的通用 UI 工具。
- */

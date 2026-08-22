@@ -40,7 +40,7 @@ export class GMHttpClient {
                                 return;
                             }
                             resolve(json as T);
-                        } catch (error) {
+                        } catch {
                             resolve(null);
                         }
                     } else {

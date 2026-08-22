@@ -173,7 +173,7 @@ const checkPing = async () => {
     try {
         const res = await systemService.pingAt(formState.crawlerDomain, {});
         pingStatus.value = (res && res.status === 'success') ? 'success' : 'error';
-    } catch (error) {
+    } catch {
         pingStatus.value = 'error';
     }
 };
@@ -199,7 +199,7 @@ const triggerInit = async () => {
             showToast('系统初始化指令投递失败，未返回任务流凭证', false);
             isInitializing.value = false;
         }
-    } catch (error) {
+    } catch {
         showToast('系统初始化通讯异常', false);
         isInitializing.value = false;
     }
@@ -231,7 +231,7 @@ const startPolling = (taskId: string) => {
                     showToast(`任务崩溃中止: ${res.current_step}`, false);
                 }
             }
-        } catch (error) {
+        } catch {
             clearInterval(pollTimer);
             isInitializing.value = false;
             showToast('无法获取实时进度，请求断开', false);

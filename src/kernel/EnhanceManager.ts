@@ -60,7 +60,6 @@ export class EnhanceManager {
             NetworkHook.getInstance().registerResponseInterceptor(this.normalizeSpec(spec));
         });
 
-        // 将模块携带的私有组件注册至全局动态渲染沙箱
         if (module.component) {
             uiStore.register(module.id, module.component);
         }
@@ -90,7 +89,6 @@ export class EnhanceManager {
             domMaster.removeStyle(styleId);
         });
 
-        // 卸载并销毁模块关联的动态组件
         if (module.component) {
             uiStore.unregister(module.id);
         }

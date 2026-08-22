@@ -45,7 +45,7 @@ class ProjectService {
             if (localData && Array.isArray(localData) && localData.length > 0) {
               return { Data: localData };
             }
-        } catch (error) {
+        } catch {
             console.warn("[Service] 链路降级: PLM_ProjectEntities");
         }
     }

@@ -18,12 +18,10 @@ import App from './view/App.vue';
 (function() {
     'use strict';
     
-    // 激活底层网络劫持总线与页面情报缓存引擎
     NetworkHook.getInstance().init();
     domMaster.init();
     authService.initObserver();
 
-    // 声明式装载增强模块清单：配置开关、路由约束、拦截器与样式回收由 EnhanceManager 统一裁决
     enhanceManager
         .registerAll([
             projectStateEnhance,

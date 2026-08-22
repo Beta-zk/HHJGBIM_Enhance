@@ -19,7 +19,6 @@ class ProjectStateEnhance implements IEnhanceModule {
     public readonly defaultEnabled = true;
     public readonly settingsKey = 'enableProjectState';
     
-    // 向系统内核暴露私有视图资产，实施依赖注入
     public readonly component = ProjectFilterPanel;
 
     public readonly interceptors = [{

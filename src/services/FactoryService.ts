@@ -26,7 +26,7 @@ class FactoryService {
                 if (localData && Object.keys(localData).length > 0) {
                     return localData;
                 }
-            } catch (error) {
+            } catch {
                 console.warn('[Service] 本地链路异常，触发降级策略: FactoryOutput');
             }
         }

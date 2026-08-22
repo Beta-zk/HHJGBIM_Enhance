@@ -12,7 +12,7 @@
              class="state-panel"
              @mousedown="startDrag">
           <div class="panel-header">
-            <span class="title">生命周期状态 (拖拽)</span>
+            <span class="title">筛选工程状态</span>
             <span class="close-btn" @click="toggleExpand" title="收起">×</span>
           </div>
           <div class="panel-body scrollbar-custom">
@@ -41,7 +41,6 @@ const store = projectStateStore;
 const isExpanded = ref(false);
 const widgetRef = ref<HTMLElement | null>(null);
 
-// 全局自由拖拽（X/Y 双向），fixed 定位以视口为钳制边界
 const { position, startDrag, hasDragged } = useDraggable({
   axis: 'both',
   containerRef: widgetRef
@@ -59,7 +58,6 @@ const locateAtTableTopLeft = () => {
   };
 };
 
-// 状态圆点点击 → 弹出悬浮窗并定位至表格左上角
 watch(() => store.panelTrigger, (count) => {
   if (count <= 0) return;
   locateAtTableTopLeft();
