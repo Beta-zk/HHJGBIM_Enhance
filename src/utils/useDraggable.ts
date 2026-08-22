@@ -96,5 +96,5 @@ export function useDraggable(options: UseDraggableOptions = {}) {
         stopDrag();
     });
 
-    return { position, startDrag, hasDragged };
+    return { position, startDrag, hasDragged, isDragging };
 }
