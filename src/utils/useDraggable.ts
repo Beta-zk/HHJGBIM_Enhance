@@ -54,19 +54,21 @@ export function useDraggable(options: UseDraggableOptions = {}) {
             let nextX = initX + dx;
             let nextY = initY + dy;
             
-            // 物理边界碰撞判定
+            // 物理边界碰撞判定：fixed 定位元素脱离文档流，钳制边界以视口为准；其余以父容器为界
             if (containerRef && containerRef.value) {
                 const selfRect = containerRef.value.getBoundingClientRect();
                 const parentEl = containerRef.value.parentElement;
-                
-                if (parentEl) {
-                    const parentRect = parentEl.getBoundingClientRect();
-                    const maxX = parentRect.height - selfRect.height;
-                    const maxY = parentRect.height - selfRect.height;
-                    
-                    nextX = Math.max(0, Math.min(nextX, parentRect.width - selfRect.width));
-                    nextY = Math.max(0, Math.min(nextY, maxY));
-                }
+                const isFixed = getComputedStyle(containerRef.value).position === 'fixed';
+
+                const boundW = isFixed
+                    ? window.innerWidth
+                    : (parentEl ? parentEl.clientWidth : window.innerWidth);
+                const boundH = isFixed
+                    ? window.innerHeight
+                    : (parentEl ? parentEl.clientHeight : window.innerHeight);
+
+                nextX = Math.max(0, Math.min(nextX, boundW - selfRect.width));
+                nextY = Math.max(0, Math.min(nextY, boundH - selfRect.height));
             }
             
             if (axis === 'both' || axis === 'x') position.value.x = nextX;
