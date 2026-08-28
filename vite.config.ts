@@ -20,9 +20,10 @@ export default defineConfig({
         match: ["*://*.bimtk.com/*"],
         /**
          * @property {string} icon 脚本图标。
-         * 支持传入外部 http/https 图片链接，或直接使用 data:image Base64 编码以防止防盗链拦截。
+         * 采用外部 CDN 链接解耦静态资产，避免 Base64 导致的代码体积膨胀。
+         * 示例链接指向本项目的 GitHub 仓库，推荐使用 jsDelivr 进行国内加速。
          */
-        icon: "https://002-bj.oss-cn-hangzhou.aliyuncs.com/undefined/2024/11/19/33_51_943/%E7%B2%BE%E5%B7%A5LOGO.png?Expires=1787905002&OSSAccessKeyId=LTAI5tA3Tns5RBXt8s7qmoD2&Signature=FDbg%2BHuv%2BDitvgfGh6biVBdIkLE%3D",
+        icon: "https://cdn.jsdelivr.net/gh/Beta-zk/HHJGBIM_Enhance@main/public/icon.png",
         grant: ["GM_xmlhttpRequest"],
         connect: [
           "integ-plat-proj-api.bimtk.com",
