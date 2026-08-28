@@ -39,14 +39,12 @@ class ProjectMaterialInventoryEnhance implements IEnhanceModule {
     /**
      * @private
      * @method injectStyleFix
-     * @description 通过异步寻址将目标容器宽度显式修正为填充父容器（width/maxWidth 均置 100%），
-     * 解除宿主固定宽度（如 1600px）在缩放时残留的右侧空白。
+     * @description 通过异步寻址将目标容器宽度修正为 100%，消除布局边界约束。
      */
     private injectStyleFix(): void {
         this.ctx.dom.waitForElement(RawInventoryHost.CONTAINER_SELECTOR)
             .then((targetContainer) => {
-                if (targetContainer.style.width !== '100%' || targetContainer.style.maxWidth !== '100%') {
-                    targetContainer.style.width = '100%';
+                if (targetContainer.style.maxWidth !== '100%') {
                     targetContainer.style.maxWidth = '100%';
                 }
             })
