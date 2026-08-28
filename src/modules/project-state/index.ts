@@ -51,7 +51,7 @@ class ProjectStateEnhance implements IEnhanceModule {
     
     private dictPromise: Promise<void> | null = null;
 
-    private readonly BLACKLIST_ROUTES = ['/project/plm/projectmanagement','/produce/raw/add'];
+    private readonly BLACKLIST_ROUTES = ['/project/plm/projectmanagement','/produce/raw/add','/produce/plm/barcode-manager/'];
 
     private readonly LOGICAL_ORDER = [
         '投标', '中标未开工', '中标停工', '局部开工', '全面开工', 

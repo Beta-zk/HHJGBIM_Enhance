@@ -25,3 +25,11 @@
 - 状态筛选面板定位锚点：`.cs-z-page-main-content`；面板容器 id：`hhjg-state-filter-container`。
 - 状态行/单元格样式类：`hhjg-state-row-enhanced` / `hhjg-state-cell-enhanced`；状态圆点：`.hhjg-state-indicator`。
 - vxe 表格页脚：`.vxe-table--footer tfoot`，正文 `.vxe-table--body tbody`。
+- **条码打印页（barcode-manager/proprint，Element UI）**：
+  - filter 区：`.barcode-filter-form` > `.filter-wrapper` > `.filter-left`（宿主原"名称"输入区，textarea 类 `.el-textarea__inner`）+ `.filter-right`。
+  - 表格区：`main.el-main.table-main` > `.t-wrapper` > `.el-table.cs-custom-table`；表体 `.el-table__body-wrapper`，表头 `.el-table__header-wrapper`。
+  - 分页条 `.custom-pagination` 是 `.t-wrapper` 的兄弟节点。
+  - 查询按钮为 `.el-button--primary` 且文本精确为"查询"（旧 `.filters button` 已失效；注意 includes 文本匹配会误命中本模块注入的"查询所属构件"按钮，必须精确匹配）。
+  - 宿主接口：`/PRO/PrintTemplate/GetPageSettingBarcodeRead` 触发控件注入。
+  - 滚动修复（临时样式 id `temp-fix-barcode-table-scroll`）：表体 `max-height: min(calc(100vh - 320px), 620px) !important; overflow: auto !important;`，表头固定、表体滚动、分页条不被遮挡；宿主自行修复后可整体删除。
+  - 本模块控件组类：`.hhjg-barcode-wrapper`（注入 filter-left 内）；清单悬浮框 id `hhjg-barcode-result-panel`，类 `hhjg-barcode-panel` / `-header` / `-body` / `-close`。
