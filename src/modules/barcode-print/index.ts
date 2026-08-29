@@ -5,24 +5,12 @@ import type { IDraggablePanel } from '../../core/DomMaster';
 import type { IEnhanceModule, ModuleContext } from '../../kernel/module.types';
 
 /**
- * ⚠️ 临时修复样式（宿主页面自行修复后可无痛删除）：
- * 宿主 el-table 未设置固定高度，数据多时表体无限撑高，超出外层 .cs-z-page-main-content 的
- * overflow:hidden 裁剪，导致表格无法滚动、且可能将下方 .custom-pagination 挤出可视区。
- * 此处为表体容器设置视口自适应最大高度并开启内部滚动（表头保持固定），保证分页条始终可见。
- */
-const TEMP_FIX_TABLE_SCROLL_STYLES = `
-    .el-main.table-main .t-wrapper .el-table__body-wrapper {
-        max-height: min(calc(100vh - 320px), 620px) !important;
-        overflow: auto !important;
-    }
-`;
-
-/**
  * @class BarcodePrintEnhance
  * @description 条码打印增强模块。监听条码读取配置接口，在打印页的 filter-left 筛选区内注入
  * 排产单号查询控件（隐藏宿主原有名称输入区但保留 DOM，原查询逻辑仍依赖其值），检索构件条码后
  * 自动回填文本域、级联选中所属项目并触发查询，随后弹出可拖拽的构件清单悬浮框供核对。
  * 页面控件构建与交互经 ModuleContext.dom 委托 DomMaster，本类仅保留查询流程编排与级联时序。
+ * 打印页表格滚动临时修复样式已迁出至独立插件 temp-fixes（宿主修复后可整体下线）。
  */
 class BarcodePrintEnhance implements IEnhanceModule {
     public readonly id = 'barcode-print';
@@ -30,7 +18,6 @@ class BarcodePrintEnhance implements IEnhanceModule {
     public readonly description = '在条码打印页通过排产单号快捷查询构件条码，并自动级联选中所属项目执行查询，展示可核对构件清单。';
     public readonly defaultEnabled = true;
     public readonly settingsKey = 'enableBarcodePrintEnhance';
-    public readonly styleIds = ['temp-fix-barcode-table-scroll'];
 
     public readonly interceptors = [{
         id: 'INTERCEPTOR_BARCODE_PRINT',
@@ -45,14 +32,8 @@ class BarcodePrintEnhance implements IEnhanceModule {
     /** 被隐藏的宿主原表单项（destroy 时恢复） */
     private hiddenFormItems: HTMLElement[] = [];
 
-    /**
-     * @method init
-     * @description 注入打印页表格滚动临时修复样式（宿主修复后可整体删除本注入与 styleIds 声明）。
-     * @param {ModuleContext} ctx 模块运行上下文
-     */
     public init(ctx: ModuleContext): void {
         this.ctx = ctx;
-        ctx.dom.injectStyle('temp-fix-barcode-table-scroll', TEMP_FIX_TABLE_SCROLL_STYLES);
     }
 
     /**

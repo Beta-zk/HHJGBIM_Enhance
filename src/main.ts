@@ -7,6 +7,7 @@ import { projectStateEnhance } from './modules/project-state';
 import { bigScreenEnhance } from './modules/production-big-screen';
 import { barcodePrintEnhance } from './modules/barcode-print';
 import { materialInventoryEnhance } from './modules/material-inventory';
+import { tempFixesEnhance } from './modules/temp-fixes';
 import { performanceReportEnhance } from './modules/performance-report';
 import { settingsEnhance } from './modules/settings';
 import { createApp } from 'vue';
@@ -30,6 +31,7 @@ import App from './kernel/ui/App.vue';
             bigScreenEnhance,
             barcodePrintEnhance,
             materialInventoryEnhance,
+            tempFixesEnhance,
             performanceReportEnhance,
             settingsEnhance
         ])
