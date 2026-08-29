@@ -31,6 +31,8 @@ export default defineConfig({
           "127.0.0.1"
         ],
         "run-at": "document-start",
+        // 禁止脚本注入 iframe，避免宿主同源嵌套页面内重复挂载内核面板
+        noframes: true,
         updateURL: "https://github.com/Beta-zk/HHJGBIM_Enhance/releases/latest/download/HHJGBIM_Enhance.meta.js",
         downloadURL: "https://github.com/Beta-zk/HHJGBIM_Enhance/releases/latest/download/HHJGBIM_Enhance.user.js",
       },

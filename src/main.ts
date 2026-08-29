@@ -21,6 +21,14 @@ import App from './kernel/ui/App.vue';
 (function() {
     'use strict';
 
+    // 仅允许脚本在顶层窗口运行：避免宿主同源 iframe 嵌套页面内重复注入，
+    // 导致内核面板出现多实例（跨域 iframe 访问 top 抛错时同样按非顶层处理）
+    try {
+        if (window.self !== window.top) return;
+    } catch {
+        return;
+    }
+
     NetworkHook.getInstance().init();
     domMaster.init();
     authService.initObserver();
@@ -42,8 +50,11 @@ import App from './kernel/ui/App.vue';
     /**
      * @function mountVueUI
      * @description 挂载 Vue 根实例至独立容器 #hhjgbim-vue-root，承载 Shell 面板与模块动态组件。
+     * 幂等：同文档内已存在挂载根节点则跳过，保证面板全局唯一。
      */
     const mountVueUI = () => {
+        if (document.getElementById('hhjgbim-vue-root')) return;
+
         const uiContainer = document.createElement('div');
         uiContainer.id = 'hhjgbim-vue-root';
         document.body.appendChild(uiContainer);
