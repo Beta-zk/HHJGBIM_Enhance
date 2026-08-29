@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import Chart from './Chart.vue';
 import { reportStore } from '../store';
 
@@ -119,9 +119,13 @@ const monthMap: Record<string, string> = {
   '9': '九月', '10': '十月', '11': '十一月', '12': '十二月'
 };
 
-onMounted(async () => {
-  await nextTick();
-  processData();
+// 组件经 uiStore 动态沙箱常驻挂载（模块激活即挂载），onMounted 仅执行一次且早于数据就绪。
+// 故改用 watch 监听显隐开关：reportStore.show 置 true（数据已写入）后重跑数据加工，
+// 保证「先拉数据 → 后开窗」时序下表格/图表使用最新数据切片。
+watch(() => reportStore.show, (visible) => {
+    if (visible) {
+        nextTick(() => processData());
+    }
 });
 
 const processData = () => {
