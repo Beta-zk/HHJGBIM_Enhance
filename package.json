@@ -1,6 +1,6 @@
 {
   "name": "HHJGBIM_Enhance",
-  "version": "0.4.15",
+  "version": "0.4.16",
   "description": "华泓精工比姆泰克增强脚本 by 江西华泓精工",
   "main": "src/main.ts",
   "scripts": {
