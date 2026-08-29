@@ -1,8 +1,8 @@
 # HHJGBIM_Enhance 项目长期记忆
 
-## 架构约定（2026-08-20 确立；2026-08-29 view 包解耦重构）
+## 架构约定（2026-08-20 确立；2026-08-29 view 包解耦重构 + 大清洗）
 
-- **分层**：`main.ts`（初始化编排）→ `core/`（增强引擎 + 基建：网络拦截、DOM 基建）→ `services/`（数据服务，全局单例网关，禁止被业务模块收编）→ `config/`、`utils/`、`kernel/ui/`（Vue UI 内核 Shell）、`modules/`（业务模块，各含 index + store + view）。`view/` 已解散，旧文件为 @deprecated 弃用壳。
+- **分层**：`main.ts`（初始化编排）→ `core/`（增强引擎 + 基建：网络拦截、DOM 基建）→ `services/`（数据服务，全局单例网关，禁止被业务模块收编）→ `config/`、`utils/`、`kernel/ui/`（Vue UI 内核 Shell）、`modules/`（业务模块，各含 index + store + view）。`view/` 已解散，旧弃用壳文件于 2026-08-29 大清洗中**彻底删除**（不再存在占位文件）。
 - **Shell 定位**：`src/kernel/ui/App.vue`（Vue 根 + 动态插槽 + 面板）与 `uiStore.ts` 组成内核 UI 子系统；**Shell 不是插件，不进插件清单**，由 main.ts 静态挂载。
 - **面板入口注册表（2026-08-29 确立）**：`src/kernel/ui/panelStore.ts`，模块通过 `IEnhanceModule.panelEntry { label, icon?, sort?, action, text?, disabled? }` 显式声明即挂载（反向注入，Shell 零业务 import）。EnhanceManager activate/deactivate 自动注册/反注册。排序码常量：`PANEL_SORT_DEFAULT = 1`、`PANEL_SORT_SETTINGS = 999`（config/constants.ts）。**禁用按属性分类推断挂载**。
 - **模块私有 store 模式**：业务视图组件由 `component` 字段注册至 uiStore 动态沙箱，显隐由模块私有 store（如 `settingsStore`、`reportStore`）驱动，数据流"模块类拉取 → 写入 store → 视图响应式渲染"，不用 props 跨模块传数据（模块内部父子组件 props 仍可用，如 PerformanceReport → Chart）。
@@ -15,7 +15,7 @@
 - **数据服务统一走 `GMHttpClient.postWithAuth(url, payload)`**（凭证等待 + 提权请求 + 空响应归一化），不再各自 waitForToken。
 - `API_URLS` 为 `as const` 字面量类型；`utils/helpers.ts` 仅保留 `showToast`。
 - 新增 web 能力优先挂到 DomMaster，避免在 core 内联重复 DOM 代码。
-- 注释规范：JSDoc 描述需精确概括职责；每模块保留就绪日志 + 错误日志，不写过程日志。
+- 注释规范：JSDoc 描述需精确概括职责；公开 API 须含 `@param{类型} 含义` + `@returns{类型} 含义`；`//` 单行注释仅保留解释"为什么"的关键防坑注释与 `// ====================` 结构化分隔；每模块保留就绪日志 + 错误日志，不写过程日志。
 
 ## 构建环境备忘（Windows）
 
