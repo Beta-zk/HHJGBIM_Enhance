@@ -29,6 +29,7 @@ class ProjectStateEnhance implements IEnhanceModule {
 
     private scanTimer: number | null = null;
     private observerDisconnect: (() => void) | null = null;
+    private routeChangeUnregister: (() => void) | null = null;
     private watchStopHandle: WatchStopHandle | null = null;
 
     private readonly STYLE_TAG_ID = 'hhjg-state-enhance-styles';
@@ -70,12 +71,21 @@ class ProjectStateEnhance implements IEnhanceModule {
             () => this.debounceScan()
         );
 
+        // 路由变化：关闭悬浮窗并清空字块，交由后续 DOM 扫描按新路由重建（重新应用名单排除策略）
+        this.routeChangeUnregister = ctx.dom.onRouteChange(() => {
+            projectStateStore.isVisible = false;
+            projectStateStore.states = [];
+        });
+
+        // 提前注册全局 DOM 观察：页面加载即开始扫描（字典就绪前无匹配，就绪后主动补扫）
+        this.activateGlobalObserver();
+
         this.dictPromise = systemService.ping().then(res => {
             this.isCrawlerReady = !!res;
             return projectService.fetchProjectEntities(this.isCrawlerReady);
         }).then(plmJson => {
             this.buildDictionary(plmJson);
-            this.activateGlobalObserver();
+            this.debounceScan();
         }).catch(e => {
             console.warn('[ProjectStateEnhance] 全局字典预热失败', e);
         });
@@ -86,6 +96,9 @@ class ProjectStateEnhance implements IEnhanceModule {
 
         this.observerDisconnect?.();
         this.observerDisconnect = null;
+
+        this.routeChangeUnregister?.();
+        this.routeChangeUnregister = null;
 
         if (this.watchStopHandle) {
             this.watchStopHandle();

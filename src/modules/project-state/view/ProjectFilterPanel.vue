@@ -72,6 +72,11 @@ watch(() => store.panelTrigger, (count) => {
   isExpanded.value = true;
 });
 
+// 面板关闭（路由切换/模块销毁）时复位展开态，避免重新激活后悬浮窗自动弹出
+watch(() => store.isVisible, (visible) => {
+  if (!visible) isExpanded.value = false;
+});
+
 /**
  * @function toggleExpand
  * @description 切换悬浮面板的折叠/展开状态，拦截拖拽遗留事件
