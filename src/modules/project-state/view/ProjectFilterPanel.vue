@@ -11,25 +11,25 @@
         <div v-if="isExpanded"
              class="w-[220px] bg-white rounded-[6px] shadow-[0_6px_20px_rgba(0,0,0,0.12)] border border-solid border-[#ebeef5] overflow-hidden cursor-move origin-left"
              @mousedown="startDrag">
-          
+
           <div class="px-[14px] py-[10px] bg-[#f8f9fa] border-0 border-b border-solid border-[#ebeef5] flex justify-between items-center cursor-move">
             <span class="text-[13px] font-semibold text-[#303133]">筛选工程状态</span>
-            <span class="cursor-pointer text-[16px] text-[#909399] leading-none px-1 transition-colors duration-[0.2s] hover:text-[#f56c6c]" 
+            <span class="cursor-pointer text-[16px] text-[#909399] leading-none px-1 transition-colors duration-[0.2s] hover:text-[#f56c6c]"
                   @click="toggleExpand" title="收起">×</span>
           </div>
-          
+
           <div class="p-[10px] max-h-[350px] overflow-y-auto scrollbar-custom">
             <div v-for="state in store.states"
                  :key="state.name"
                  class="flex items-center px-[12px] py-[8px] mb-[6px] rounded-[4px] cursor-pointer text-[13px] text-[#606266] bg-[#f5f7fa] transition-all duration-[0.2s] last:mb-0 hover:bg-[#ecf5ff]"
                  :class="{ '!bg-[#e1f3d8] !text-[#67c23a] font-medium': store.activeStates.has(state.name) }"
                  @click="onStateClick(state.name)">
-              <span class="w-[8px] h-[8px] rounded-full mr-[10px] shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.1)]" 
+              <span class="w-[8px] h-[8px] rounded-full mr-[10px] shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
                     :style="{ backgroundColor: state.color }"></span>
               {{ state.name }}
             </div>
           </div>
-          
+
         </div>
       </Transition>
 

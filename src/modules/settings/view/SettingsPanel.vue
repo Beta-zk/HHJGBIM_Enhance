@@ -57,7 +57,7 @@
                         <p class="m-0 text-slate-400 text-[13px] leading-relaxed">配置后才可使用爬虫服务。</p>
                     </div>
                     <div class="flex items-center gap-2.5">
-                        
+
                         <div class="max-w-[200px] overflow-hidden whitespace-nowrap mr-2 flex items-center" v-if="isInitializing || progressValue > 0" ref="marqueeWrapperRef">
                             <span class="text-sky-400 text-[13px] font-medium inline-block highlight-step" ref="marqueeTextRef" :class="{ 'is-scrolling': isOverflowing }">
                                 {{ currentStep }}
@@ -72,7 +72,7 @@
                             </svg>
                             <span class="absolute text-[9px] text-slate-50 font-bold select-none">{{ progressValue }}%</span>
                         </div>
-                        
+
                         <span class="text-[18px] select-none w-6 text-center" v-else
                             :title="pingStatus === 'success' ? '连通正常' : (pingStatus === 'error' ? '失联或跨域拒绝' : (pingStatus === 'loading' ? '检测中...' : '待检测'))">
                             {{ pingStatus === 'success' ? '✅' : (pingStatus === 'error' ? '❌' : (pingStatus === 'loading' ? '⏳' : '⚪')) }}
@@ -80,7 +80,7 @@
 
                         <input type="text" v-model="formState.crawlerDomain" @blur="checkPing" class="w-[190px] bg-slate-800 border border-solid border-slate-600 rounded-md text-slate-50 py-2 px-3 appearance-none outline-none transition-colors duration-200 focus:border-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
                             placeholder="默认: http://127.0.0.1:8000" :disabled="isInitializing" />
-                            
+
                         <button class="w-9 h-9 flex items-center justify-center shrink-0 bg-slate-700 border border-solid border-slate-600 rounded-md text-slate-50 cursor-pointer appearance-none outline-none transition-colors hover:bg-slate-600 hover:border-sky-400 disabled:hover:bg-slate-700 disabled:hover:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:grayscale" @click="triggerInit"
                             :disabled="isInitializing || pingStatus !== 'success'">
                             <span>🔄</span>
@@ -148,7 +148,7 @@ const checkTextOverflow = async () => {
     if (marqueeWrapperRef.value && marqueeTextRef.value) {
         const wrapperWidth = marqueeWrapperRef.value.clientWidth;
         const textWidth = marqueeTextRef.value.scrollWidth;
-        
+
         if (textWidth > wrapperWidth) {
             isOverflowing.value = true;
             const dist = textWidth - wrapperWidth + 15;
@@ -183,14 +183,14 @@ const triggerInit = async () => {
         showToast('请先填写爬虫服务地址', false);
         return;
     }
-    
+
     isInitializing.value = true;
     progressValue.value = 0;
     currentStep.value = '请求建立任务...';
-    
+
     try {
         const res = await systemService.systemIntAt(formState.crawlerDomain, {});
-        
+
         if (res && res.status === 'success' && res.taskId) {
             showToast('初始化任务已进入后台队列', true);
             startPolling(res.taskId);
@@ -206,11 +206,11 @@ const triggerInit = async () => {
 
 const startPolling = (taskId: string) => {
     if (pollTimer) clearInterval(pollTimer);
-    
+
     pollTimer = setInterval(async () => {
         try {
             const res = await systemService.getTaskProgress(taskId, formState.crawlerDomain);
-            
+
             if (res) {
                 progressValue.value = res.progress || 0;
                 currentStep.value = res.current_step || '';
@@ -219,7 +219,7 @@ const startPolling = (taskId: string) => {
                     clearInterval(pollTimer);
                     isInitializing.value = false;
                     showToast('全量爬虫任务已完成！', true);
-                    
+
                     setTimeout(() => {
                         progressValue.value = 0;
                         currentStep.value = '';
@@ -238,7 +238,7 @@ const startPolling = (taskId: string) => {
     }, 1500);
 };
 
-const handleClose = () => { 
+const handleClose = () => {
     if (isInitializing.value) {
         showToast('后台任务仍在运行中，设置中心仅执行隐藏操作。', true);
     }

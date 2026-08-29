@@ -80,12 +80,12 @@ const initCharts = () => {
         }, true);
     } else {
         const personList = props.personnelMatrix?.list || [];
-        
+
         const prevMonthData = personList.map((p: PersonnelWeight) => ({
             name: p.name,
             value: p.prevWeight
         }));
-        
+
         const currMonthData = personList.map((p: PersonnelWeight) => ({
             name: p.name,
             value: p.currWeight
@@ -97,16 +97,16 @@ const initCharts = () => {
                 { text: props.personnelMatrix.prevMonth, left: '25%', top: '15%', textAlign: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
                 { text: props.personnelMatrix.currMonth, left: '75%', top: '15%', textAlign: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } }
             ],
-            tooltip: { 
+            tooltip: {
                 trigger: 'item',
                 formatter: (params: any) => {
                     const roundedVal = Math.round(params.value || 0);
                     return `${params.seriesName} <br/>${params.name} : ${roundedVal}t<br/>${params.percent}%`;
                 }
             },
-            legend: { 
-                bottom: '0%', 
-                textStyle: { color: '#94a3b8' } 
+            legend: {
+                bottom: '0%',
+                textStyle: { color: '#94a3b8' }
             },
             series: [
                 {
@@ -115,12 +115,12 @@ const initCharts = () => {
                     radius: '35%',
                     center: ['28%', '55%'],
                     data: prevMonthData,
-                    label: { 
-                        show: true, 
+                    label: {
+                        show: true,
                         formatter: (params: any) => {
                             const roundedVal = Math.round(params.value || 0);
                             return `${params.name}\n${roundedVal}t\n${params.percent}%`;
-                        }, 
+                        },
                         color: '#f8fafc',
                         fontSize: 11
                     },
@@ -135,12 +135,12 @@ const initCharts = () => {
                     radius: '35%',
                     center: ['72%', '55%'],
                     data: currMonthData,
-                    label: { 
-                        show: true, 
+                    label: {
+                        show: true,
                         formatter: (params: any) => {
                             const roundedVal = Math.round(params.value || 0);
                             return `${params.name}\n${roundedVal}t\n${params.percent}%`;
-                        }, 
+                        },
                         color: '#f8fafc',
                         fontSize: 11
                     },

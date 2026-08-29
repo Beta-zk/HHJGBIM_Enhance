@@ -55,7 +55,7 @@ class ProductionIntegrationBigScreenEnhance implements IEnhanceModule {
                         if (!targetSpan.hasAttribute(config.flag)) {
                             targetSpan.setAttribute(config.flag, 'true');
                             targetSpan.style.cursor = 'pointer';
-                            
+
                             targetSpan.addEventListener('click', (e: MouseEvent) => {
                                 e.preventDefault();
                                 e.stopPropagation();

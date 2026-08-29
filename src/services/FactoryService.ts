@@ -7,7 +7,7 @@ import { settings } from '../config/settings';
  * @description 工厂产能数据网关。拉取月度综合产出指标，优先走本地爬虫链路，失败时降级到宿主接口。
  */
 class FactoryService {
-    
+
     /**
      * @method fetchMonthlyOutput
      * @description 拉取月度综合产出指标：本地链路返回空时自动降级到宿主接口。
@@ -30,7 +30,7 @@ class FactoryService {
                 console.warn('[Service] 本地链路异常，触发降级策略: FactoryOutput');
             }
         }
-        
+
         return await GMHttpClient.postWithAuth(API_URLS.MONTHLY_FACTORY_OUTPUT, payload);
     }
 }

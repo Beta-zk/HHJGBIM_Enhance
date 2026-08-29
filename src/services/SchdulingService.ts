@@ -31,7 +31,7 @@ export interface ISchdulingResult {
  * @description 生产排产业务聚合引擎。
  */
 class SchdulingService {
-    
+
     /**
      * @method getCompCodesBySchdulingCode
      * @description 通过排产单号，利用多态请求级联获取关联的构件编码数组及项目源信息。
@@ -40,7 +40,7 @@ class SchdulingService {
      * @returns {Promise<ISchdulingResult>}
      */
     public async getCompCodesBySchdulingCode(
-        schdulingCode: string, 
+        schdulingCode: string,
         optionalParams: ISchdulingOptionalParams = {}
     ): Promise<ISchdulingResult> {
         if (!schdulingCode) {
@@ -63,7 +63,7 @@ class SchdulingService {
         };
 
         const pageRes = await GMHttpClient.postWithAuth(API_URLS.GET_COMP_SCHDULING_PAGE_LIST, pagePayload);
-        
+
         if (!pageRes || !pageRes.Data || !Array.isArray(pageRes.Data.Data)) {
             throw new Error('[SchdulingService] 排产分页请求失败或结构异常');
         }

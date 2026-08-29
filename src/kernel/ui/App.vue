@@ -1,8 +1,8 @@
 <template>
   <div class="fixed top-1/2 right-0 -translate-y-1/2 w-[220px] bg-slate-800/95 text-slate-50 rounded-l-lg shadow-[-5px_0_25px_rgba(0,0,0,0.3)] backdrop-blur z-[2147483646] transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] border border-solid border-r-0 border-slate-700"
        :class="isExpanded ? 'translate-x-0' : 'translate-x-full'">
-    
-    <div class="absolute -left-10 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-800/95 border border-solid border-r-0 border-slate-700 rounded-l-lg cursor-pointer flex items-center justify-center hover:bg-slate-700" 
+
+    <div class="absolute -left-10 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-800/95 border border-solid border-r-0 border-slate-700 rounded-l-lg cursor-pointer flex items-center justify-center hover:bg-slate-700"
          @click="togglePanel">
       <span class="font-mono text-[18px] font-bold text-sky-400">{{ isExpanded ? '>' : '<' }}</span>
     </div>

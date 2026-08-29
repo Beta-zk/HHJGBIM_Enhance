@@ -3,6 +3,11 @@ import type { IUserSettings } from '../config/settings';
 import type { UrlPattern } from '../core/NetworkHook';
 import type { Component } from 'vue';
 
+/**
+ * @interface IResponseInterceptorSpec
+ * @description 模块声明式响应拦截器契约。提供 urlMatcher 路由匹配、可选的 beforeRequest 前置预取、
+ * transform/onResponse 数据改写与副作用通道；指定 handler 时优先使用自定义处理器。
+ */
 export interface IResponseInterceptorSpec {
     id: string;
     urlMatcher: UrlPattern | ((url: string) => boolean);
@@ -45,7 +50,7 @@ export interface IEnhanceModule {
     readonly component?: Component;
     /** 面板入口声明：声明即挂载至全局 Shell 面板，未声明则不显示 */
     readonly panelEntry?: IPanelEntrySpec;
-    
+
     init(ctx: ModuleContext): void | Promise<void>;
     destroy?(): void;
 }

@@ -1,7 +1,8 @@
 import type { IEnhanceModule, ModuleContext } from '../../kernel/module.types';
 
 /**
- * ⚠️ 临时修复样式（宿主页面自行修复后可无痛删除）：
+ * @const TEMP_FIX_TABLE_SCROLL_STYLES
+ * @description ⚠️ 临时修复样式（宿主页面自行修复后可无痛删除）：
  * 宿主 el-table 未设置固定高度，数据多时表体无限撑高，超出外层 .cs-z-page-main-content 的
  * overflow:hidden 裁剪，导致表格无法滚动、且可能将下方 .custom-pagination 挤出可视区。
  * 此处为表体容器设置视口自适应最大高度并开启内部滚动（表头保持固定），保证分页条始终可见。

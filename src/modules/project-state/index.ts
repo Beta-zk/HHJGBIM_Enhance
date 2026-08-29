@@ -18,7 +18,7 @@ class ProjectStateEnhance implements IEnhanceModule {
     public readonly description = '为项目表格动态注入生命周期状态指示器及全局筛选面板。';
     public readonly defaultEnabled = true;
     public readonly settingsKey = 'enableProjectState';
-    
+
     public readonly component = ProjectFilterPanel;
 
     public readonly interceptors = [{
@@ -37,37 +37,37 @@ class ProjectStateEnhance implements IEnhanceModule {
 
     private ctx!: ModuleContext;
     private isCrawlerReady: boolean = false;
-    
+
     private matchMap = new Map<string, string>();
     private uniqueStates = new Set<string>();
     private totalStatesCount: number = 0;
-    
+
     private scanTimer: number | null = null;
     private observerDisconnect: (() => void) | null = null;
     private watchStopHandle: WatchStopHandle | null = null;
-    
+
     private readonly STYLE_TAG_ID = 'hhjg-state-enhance-styles';
     public readonly styleIds = [this.STYLE_TAG_ID];
-    
+
     private dictPromise: Promise<void> | null = null;
 
     private readonly BLACKLIST_ROUTES = ['/project/plm/projectmanagement','/produce/raw/add','/produce/plm/barcode-manager/'];
 
     private readonly LOGICAL_ORDER = [
-        '投标', '中标未开工', '中标停工', '局部开工', '全面开工', 
+        '投标', '中标未开工', '中标停工', '局部开工', '全面开工',
         '临时停工', '收尾', '完工未验收', '完工已验收'
     ];
 
     private readonly STATE_COLORS: Record<string, string> = {
-        '投标': '#409eff',         
-        '中标未开工': '#f56c6c',     
-        '中标停工': '#f56c6c',       
-        '临时停工': '#f56c6c',       
-        '局部开工': '#e6a23c',       
-        '全面开工': '#e6a23c',       
-        '收尾': '#e6a23c',           
-        '完工未验收': '#67c23a',     
-        '完工已验收': '#67c23a'      
+        '投标': '#409eff',
+        '中标未开工': '#f56c6c',
+        '中标停工': '#f56c6c',
+        '临时停工': '#f56c6c',
+        '局部开工': '#e6a23c',
+        '全面开工': '#e6a23c',
+        '收尾': '#e6a23c',
+        '完工未验收': '#67c23a',
+        '完工已验收': '#67c23a'
     };
 
     public init(ctx: ModuleContext): void {
@@ -84,7 +84,7 @@ class ProjectStateEnhance implements IEnhanceModule {
             return projectService.fetchProjectEntities(this.isCrawlerReady);
         }).then(plmJson => {
             this.buildDictionary(plmJson);
-            this.activateGlobalObserver(); 
+            this.activateGlobalObserver();
         }).catch(e => {
             console.warn('[ProjectStateEnhance] 全局字典预热失败', e);
         });
@@ -92,10 +92,10 @@ class ProjectStateEnhance implements IEnhanceModule {
 
     public destroy(): void {
         this.cleanupAll();
-        
+
         this.observerDisconnect?.();
         this.observerDisconnect = null;
-        
+
         if (this.watchStopHandle) {
             this.watchStopHandle();
             this.watchStopHandle = null;
@@ -107,14 +107,14 @@ class ProjectStateEnhance implements IEnhanceModule {
 
     private buildDictionary(plmJson: any): void {
         if (!plmJson) return;
-        
+
         let items = [];
         if (this.isCrawlerReady) {
             items = plmJson.Data?.Data || plmJson.Data || plmJson || [];
         } else {
             items = plmJson.Data?.Data || [];
         }
-        
+
         this.matchMap.clear();
         this.uniqueStates.clear();
 
@@ -123,11 +123,11 @@ class ProjectStateEnhance implements IEnhanceModule {
             if (String(state) === '0') return;
 
             const keyCandidates = [item.Name, item.Project_Name, item.Short_Name, state].filter(Boolean);
-            
+
             keyCandidates.forEach(keyText => {
                 this.matchMap.set(String(keyText).trim(), state);
             });
-            
+
             if (state) this.uniqueStates.add(state);
         });
     }
@@ -145,7 +145,7 @@ class ProjectStateEnhance implements IEnhanceModule {
 
         this.ctx.dom.querySelectorAll<HTMLElement>('.hhjg-state-row-enhanced').forEach(el => {
             this.ctx.dom.removeClass(el, 'hhjg-state-row-enhanced');
-            el.style.display = ''; 
+            el.style.display = '';
         });
 
         this.ctx.dom.querySelectorAll<HTMLElement>('.hhjg-state-cell-enhanced').forEach(el => {
@@ -158,9 +158,9 @@ class ProjectStateEnhance implements IEnhanceModule {
     private populateFilterStates(viewStates?: Set<string>): void {
         const statesToRender = (viewStates && viewStates.size > 0) ? viewStates : this.uniqueStates;
         this.totalStatesCount = statesToRender.size;
-        
+
         const defaultExcludedStates = new Set(['完工未验收', '完工已验收']);
-        
+
         projectStateStore.activeStates.clear();
         Array.from(statesToRender).forEach(state => {
             if (!defaultExcludedStates.has(state)) projectStateStore.activeStates.add(state);
@@ -193,7 +193,7 @@ class ProjectStateEnhance implements IEnhanceModule {
                 if (state) viewStates.add(state);
             });
         }
-        
+
         this.populateFilterStates(viewStates);
         this.debounceScan();
     }
@@ -202,11 +202,11 @@ class ProjectStateEnhance implements IEnhanceModule {
         this.observerDisconnect = this.ctx.dom.observeDom((mutations) => {
             const isOnlyIndicatorMutations = Array.from(mutations).every(m => {
                 if (m.type !== 'childList') return false;
-                
+
                 const checkNodes = (nodes: NodeList) => Array.from(nodes).every(
                     n => n.nodeType === 1 && (n as HTMLElement).classList.contains('hhjg-state-indicator')
                 );
-                
+
                 return checkNodes(m.addedNodes) && checkNodes(m.removedNodes);
             });
 
@@ -219,7 +219,7 @@ class ProjectStateEnhance implements IEnhanceModule {
             attributes: true,
             attributeFilter: ['class']
         });
-        
+
         this.debounceScan();
     }
 
@@ -264,7 +264,7 @@ class ProjectStateEnhance implements IEnhanceModule {
                     break;
                 }
             }
-            
+
             return { tr, rowid, matchedState, targetElement };
         });
 
@@ -307,7 +307,7 @@ class ProjectStateEnhance implements IEnhanceModule {
                 }
             } else {
                 this.ctx.dom.removeClass(tr, 'hhjg-state-row-enhanced');
-                tr.style.display = ''; 
+                tr.style.display = '';
                 tr.querySelectorAll('.hhjg-state-cell-enhanced').forEach(el => {
                     this.ctx.dom.removeClass(el as HTMLElement, 'hhjg-state-cell-enhanced');
                     el.querySelector(':scope > .hhjg-state-indicator')?.remove();

@@ -152,7 +152,7 @@ export class DomMaster {
     /**
      * @method getCurrentUrl
      * @description 获取当前页面完整 URL。
-     * @returns {string}
+     * @returns {string} 当前页面完整地址
      */
     public getCurrentUrl(): string {
         return window.location.href;
@@ -255,8 +255,8 @@ export class DomMaster {
      * @method scrollIntoView
      * @description 滚动定位元素（支持选择器或元素引用），返回是否命中。
      * @param {HTMLElement | string} elOrSelector 目标元素或选择器
-     * @param {ScrollIntoViewOptions} [options] 滚动选项
-     * @returns {boolean}
+     * @param {ScrollIntoViewOptions} [options] 滚动选项，缺省平滑滚动至视口中央
+     * @returns {boolean} 是否命中目标
      */
     public scrollIntoView(elOrSelector: HTMLElement | string, options?: ScrollIntoViewOptions): boolean {
         const el = typeof elOrSelector === 'string' ? document.querySelector(elOrSelector) : elOrSelector;
@@ -371,6 +371,8 @@ export class DomMaster {
     /**
      * @method removeClass
      * @description 从元素移除类名。
+     * @param {HTMLElement} el 目标元素
+     * @param {string} className 待移除类名
      */
     public removeClass(el: HTMLElement, className: string): void {
         el.classList.remove(className);
@@ -379,6 +381,9 @@ export class DomMaster {
     /**
      * @method toggleClass
      * @description 切换元素类名，可选强制状态。
+     * @param {HTMLElement} el 目标元素
+     * @param {string} className 待切换类名
+     * @param {boolean} [force] 强制添加(true)或移除(false)，缺省自动取反
      */
     public toggleClass(el: HTMLElement, className: string, force?: boolean): void {
         el.classList.toggle(className, force);
@@ -387,6 +392,8 @@ export class DomMaster {
     /**
      * @method setStyle
      * @description 批量覆盖元素行内样式。
+     * @param {HTMLElement} el 目标元素
+     * @param {Partial<CSSStyleDeclaration>} styles 待写入的样式键值对
      */
     public setStyle(el: HTMLElement, styles: Partial<CSSStyleDeclaration>): void {
         Object.assign(el.style, styles);
@@ -397,6 +404,9 @@ export class DomMaster {
     /**
      * @method getElementById
      * @description 按 id 获取 DOM 节点。
+     * @template T 节点类型，默认 HTMLElement
+     * @param {string} id 目标元素 id
+     * @returns {T | null} 命中节点，未找到返回 null
      */
     public getElementById<T extends HTMLElement = HTMLElement>(id: string): T | null {
         return document.getElementById(id) as T | null;
@@ -405,6 +415,10 @@ export class DomMaster {
     /**
      * @method querySelectorAll
      * @description 查询满足选择器的元素数组（默认全局，可指定根节点）。
+     * @template T 元素类型，默认 Element
+     * @param {string} selector CSS 选择器
+     * @param {ParentNode} [root=document] 查询根节点
+     * @returns {T[]} 命中的元素数组
      */
     public querySelectorAll<T extends Element = Element>(selector: string, root: ParentNode = document): T[] {
         return Array.from(root.querySelectorAll(selector)) as T[];
@@ -413,6 +427,9 @@ export class DomMaster {
     /**
      * @method findElementByText
      * @description 在指定选择器集合中查找首个文本包含目标内容的元素。
+     * @param {string} selector CSS 选择器
+     * @param {string} text 目标文本
+     * @returns {HTMLElement | null} 命中元素，未找到返回 null
      */
     public findElementByText(selector: string, text: string): HTMLElement | null {
         const nodes = this.querySelectorAll<HTMLElement>(selector);
@@ -422,6 +439,9 @@ export class DomMaster {
     /**
      * @method clickElementByText
      * @description 点击文本包含目标内容的元素，返回是否命中。
+     * @param {string} selector CSS 选择器
+     * @param {string} text 目标文本
+     * @returns {boolean} 是否命中并触发点击
      */
     public clickElementByText(selector: string, text: string): boolean {
         const el = this.findElementByText(selector, text);
@@ -436,6 +456,7 @@ export class DomMaster {
      * @method isUrlMatch
      * @description 判断当前页面 URL 是否命中任一关键字（不区分大小写）。
      * @param {string[]} patterns 路由关键字名单
+     * @returns {boolean} 是否命中任一关键字
      */
     public isUrlMatch(patterns: string[]): boolean {
         const currentUrl = window.location.href.toLowerCase();

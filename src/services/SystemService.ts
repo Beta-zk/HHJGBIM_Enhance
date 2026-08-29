@@ -10,7 +10,7 @@ class SystemService {
     private cachedPingStatus: boolean | null = null;
     private lastPingTime: number = 0;
     private readonly PING_CACHE_TTL = 15000;
-    
+
     /**
      * @method submitSystemReport
      * @description 上报系统运行指标（含抓取时间戳）至爬虫服务。
@@ -31,7 +31,7 @@ class SystemService {
      */
     public async ping(params: Record<string, any> = {}, force: boolean = false): Promise<any> {
         const now = Date.now();
-        
+
         if (!force && this.cachedPingStatus !== null && (now - this.lastPingTime < this.PING_CACHE_TTL)) {
             if (!this.cachedPingStatus) {
                 return null;
@@ -41,13 +41,13 @@ class SystemService {
 
         const url = `${settings.get().crawlerDomain}${API_URLS.LOCAL_SYSTEM_PING_PATH}`;
         const response = await GMHttpClient.postWithAuth(url, params);
-        
+
         this.lastPingTime = Date.now();
         if (!response) {
             this.cachedPingStatus = false;
             return null;
         }
-        
+
         this.cachedPingStatus = true;
         return response;
     }

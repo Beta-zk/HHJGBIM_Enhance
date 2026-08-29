@@ -17,16 +17,32 @@ export class EnhanceManager {
         settings: () => settings.get()
     };
 
+    /**
+     * @method register
+     * @description 注册单个增强模块，供后续 start() 统一装载。
+     * @param {IEnhanceModule} module 增强模块实例
+     * @returns {this} 支持链式调用
+     */
     public register(module: IEnhanceModule): this {
         this.modules.push(module);
         return this;
     }
 
+    /**
+     * @method registerAll
+     * @description 批量注册增强模块。
+     * @param {IEnhanceModule[]} moduleList 增强模块数组
+     * @returns {this} 支持链式调用
+     */
     public registerAll(moduleList: IEnhanceModule[]): this {
         this.modules.push(...moduleList);
         return this;
     }
 
+    /**
+     * @method start
+     * @description 启动增强内核：按启用配置激活模块，并挂载路由监听驱动按页启用/停用。幂等，仅执行一次。
+     */
     public start(): void {
         if (this.started) return;
         this.started = true;
@@ -41,6 +57,10 @@ export class EnhanceManager {
         console.log(`[Kernel] 增强内核已启动，启用模块 ${this.activeModules.size}/${this.modules.length}`);
     }
 
+    /**
+     * @method dispose
+     * @description 停用全部模块并卸载路由监听，将内核复位至未启动状态（测试或热重载用）。
+     */
     public dispose(): void {
         this.modules.forEach(module => this.deactivate(module));
         this.unregisterRouteListener?.();
@@ -48,6 +68,13 @@ export class EnhanceManager {
         this.started = false;
     }
 
+    /**
+     * @method isEnabled
+     * @description 依据用户配置判定模块是否启用：读取 settingsKey（缺省回退模块 id）对应开关，
+     * 未配置时使用模块默认值。
+     * @param {IEnhanceModule} module 增强模块实例
+     * @returns {boolean} 是否启用
+     */
     public isEnabled(module: IEnhanceModule): boolean {
         const key = module.settingsKey || module.id;
         const config = this.ctx.settings() as any;

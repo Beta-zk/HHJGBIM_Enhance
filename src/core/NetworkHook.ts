@@ -80,7 +80,7 @@ export class NetworkHook {
     /**
      * @method registerHeaderSniffer
      * @description 注册请求头嗅探器，捕获业务流量中的授权凭证。
-     * @param {(key: string, value: string) => void} callback
+     * @param {(key: string, value: string) => void} callback 请求头回调（头名、头值）
      */
     public registerHeaderSniffer(callback: (key: string, value: string) => void): void {
         this.headerSniffers.push(callback);
@@ -89,11 +89,11 @@ export class NetworkHook {
     /**
      * @method registerResponseInterceptor
      * @description 挂载响应篡改管线，利用严格 ID 机制防止重复注册造成的内存泄漏。
-     * @param {IResponseInterceptor} interceptor
+     * @param {IResponseInterceptor} interceptor 拦截器实例（同 id 重复注册时覆盖旧实现）
      */
     public registerResponseInterceptor(interceptor: IResponseInterceptor): void {
         const existingIndex = this.responseInterceptors.findIndex(i => i.id === interceptor.id);
-        
+
         if (existingIndex !== -1) {
             console.warn(`[Hook] 拦截器已重置: ${interceptor.id}`);
             this.responseInterceptors[existingIndex] = interceptor;
@@ -145,7 +145,7 @@ export class NetworkHook {
                 const executeSend = () => {
                     const originalResponseTextGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'responseText')?.get;
                     const originalResponseGetter = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'response')?.get;
-                    
+
                     let isProcessed = false;
                     let cachedText: string | null = null;
                     let cachedResponse: any = null;
@@ -233,7 +233,7 @@ export class NetworkHook {
                 try {
                     const cloneRes = response.clone();
                     const originalJson = await cloneRes.json();
-                    
+
                     const modifiedJson = matchedInterceptor.handler(originalJson, prefetchData);
                     const modifiedStr = JSON.stringify(modifiedJson);
 

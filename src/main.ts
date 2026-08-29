@@ -20,7 +20,7 @@ import App from './kernel/ui/App.vue';
  */
 (function() {
     'use strict';
-    
+
     NetworkHook.getInstance().init();
     domMaster.init();
     authService.initObserver();
@@ -36,14 +36,18 @@ import App from './kernel/ui/App.vue';
             settingsEnhance
         ])
         .start();
-    
+
     console.log('[Core] 华泓精工BIM增强脚本加载完毕');
 
+    /**
+     * @function mountVueUI
+     * @description 挂载 Vue 根实例至独立容器 #hhjgbim-vue-root，承载 Shell 面板与模块动态组件。
+     */
     const mountVueUI = () => {
         const uiContainer = document.createElement('div');
         uiContainer.id = 'hhjgbim-vue-root';
         document.body.appendChild(uiContainer);
-        
+
         const app = createApp(App);
         app.mount(uiContainer);
     };

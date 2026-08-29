@@ -1,5 +1,9 @@
 import { reactive } from 'vue';
 
+/**
+ * @interface IStateItem
+ * @description 筛选面板状态项：名称与指示器颜色。
+ */
 export interface IStateItem {
     name: string;
     color: string;

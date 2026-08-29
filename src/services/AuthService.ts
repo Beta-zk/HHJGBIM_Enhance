@@ -9,12 +9,12 @@ class AuthService {
         "content-type": "application/json",
         "priority": "u=1, i"
     };
-    
+
     private readonly AUTH_STORAGE_KEY = 'HHJG_BIM_AUTH_TOKEN';
     private readonly AUTH_TIME_KEY = 'HHJG_BIM_AUTH_TIME';
     private readonly CACHE_DURATION = 24 * 60 * 60 * 1000;
     private tokenResolvers: Array<(token: string) => void> = [];
-    private isSessionTokenReady: boolean = false; 
+    private isSessionTokenReady: boolean = false;
 
     private readonly SESSION_HEADERS = new Set([
         'authorization',
@@ -24,7 +24,7 @@ class AuthService {
     constructor() {
         const savedToken = localStorage.getItem(this.AUTH_STORAGE_KEY);
         const savedTime = localStorage.getItem(this.AUTH_TIME_KEY);
-        
+
         if (savedToken && savedTime) {
             const now = Date.now();
             if (now - parseInt(savedTime, 10) < this.CACHE_DURATION) {

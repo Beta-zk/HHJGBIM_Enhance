@@ -7,7 +7,7 @@ import { settings } from '../config/settings';
  * @description 构件深化重量数据网关。面向本地爬虫微服务提供年度/月度权重查询，避免高频访问宿主接口。
  */
 class ComponentService {
-    
+
     /**
      * @method getYearWeight
      * @description 查询构件域在全量时间轴下的年度权重矩阵。

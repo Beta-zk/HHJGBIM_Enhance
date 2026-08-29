@@ -82,7 +82,7 @@ class PerformanceReportEnhance implements IEnhanceModule {
             ]);
 
             const extractedPersonnelData: PersonnelWeight[] = [];
-            
+
             if (isLocalReady) {
                 for (const person of personnelList) {
                     const [currData, prevData] = await Promise.all([

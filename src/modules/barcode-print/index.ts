@@ -168,8 +168,7 @@ class BarcodePrintEnhance implements IEnhanceModule {
                                     if (searchBtn) searchBtn.click();
                                     else console.warn('[UI] 联动事件异常熔断：终端 DOM 树中缺失关键“查询”交互节点');
 
-                                    // 后续逻辑全部完成后，弹出构件清单悬浮框供核对
-                                    // 数据源为 filter-left 中输入框（textarea）的实际内容
+                                    // 查询链路收尾后，以 textarea 实际内容为数据源弹出构件清单悬浮框
                                     const listContent = textarea
                                         ? textarea.value.split('\n')
                                         : compCodes;

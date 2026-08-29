@@ -9,12 +9,12 @@ type ToastType = 'info' | 'success' | 'warning' | 'error';
  * @returns {void}
  */
 export function showToast(
-    msg: string, 
+    msg: string,
     typeOrStatus: boolean | ToastType = true,
     duration: number = 3000
 ): void {
-    const type: ToastType = typeof typeOrStatus === 'boolean' 
-        ? (typeOrStatus ? 'success' : 'error') 
+    const type: ToastType = typeof typeOrStatus === 'boolean'
+        ? (typeOrStatus ? 'success' : 'error')
         : typeOrStatus;
 
     const colorMap: Record<ToastType, { iconColor: string; shadow: string }> = {
