@@ -38,6 +38,12 @@ class ProjectStateEnhance implements IEnhanceModule {
 
     private readonly BLACKLIST_ROUTES = ['/project/plm/projectmanagement','/produce/raw/add','/produce/plm/barcode-manager/'];
 
+    /** 执行「完工类状态默认不激活」的路由名单（子串匹配），名单外路由默认激活全部状态字块 */
+    private readonly DEFAULT_EXCLUDED_ROUTES = ['/produce/pro/project-inventory'];
+
+    /** 仅名单路由生效的默认不激活状态 */
+    private readonly DEFAULT_EXCLUDED_STATES = ['完工未验收', '完工已验收'];
+
     private readonly LOGICAL_ORDER = [
         '投标', '中标未开工', '中标停工', '局部开工', '全面开工',
         '临时停工', '收尾', '完工未验收', '完工已验收'
@@ -140,15 +146,26 @@ class ProjectStateEnhance implements IEnhanceModule {
         this.ctx.dom.querySelectorAll<HTMLElement>('.hhjg-state-indicator').forEach(indicator => indicator.remove());
     }
 
+    /**
+     * @method shouldApplyDefaultExclusion
+     * @description 判定当前路由是否命中 DEFAULT_EXCLUDED_ROUTES 名单，决定是否执行「完工类状态默认不激活」。
+     * @returns {boolean} 命中名单则应用默认排除
+     */
+    private shouldApplyDefaultExclusion(): boolean {
+        return this.ctx.dom.isUrlMatch(this.DEFAULT_EXCLUDED_ROUTES);
+    }
+
     private populateFilterStates(viewStates?: Set<string>): void {
         const statesToRender = (viewStates && viewStates.size > 0) ? viewStates : this.uniqueStates;
         this.totalStatesCount = statesToRender.size;
 
-        const defaultExcludedStates = new Set(['完工未验收', '完工已验收']);
+        const excludedStates = this.shouldApplyDefaultExclusion()
+            ? new Set(this.DEFAULT_EXCLUDED_STATES)
+            : new Set<string>();
 
         projectStateStore.activeStates.clear();
         Array.from(statesToRender).forEach(state => {
-            if (!defaultExcludedStates.has(state)) projectStateStore.activeStates.add(state);
+            if (!excludedStates.has(state)) projectStateStore.activeStates.add(state);
         });
 
         projectStateStore.states = Array.from(statesToRender).sort((a, b) => {
