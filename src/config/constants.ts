@@ -19,3 +19,15 @@ export const API_URLS = {
     GET_COMP_SCHDULING_INFO_DETAIL: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionSchduling/GetCompSchdulingInfoDetail',
     GET_RAW_WH_SUMMARY_LIST: 'https://integ-plat-produce-api.bimtk.com/PRO/MaterielInventory/GetRawWHSummaryList'
 } as const;
+
+/**
+ * @constant PANEL_SORT_DEFAULT
+ * @description 面板入口默认排序码（越小越靠前）。模块可通过 panelEntry.sort 覆盖。
+ */
+export const PANEL_SORT_DEFAULT = 1;
+
+/**
+ * @constant PANEL_SORT_SETTINGS
+ * @description 偏好设置面板入口排序码，固定置底，避免与业务入口抢占面板头部空间。
+ */
+export const PANEL_SORT_SETTINGS = 999;

@@ -7,13 +7,15 @@ import { projectStateEnhance } from './modules/project-state';
 import { bigScreenEnhance } from './modules/production-big-screen';
 import { barcodePrintEnhance } from './modules/barcode-print';
 import { materialInventoryEnhance } from './modules/material-inventory';
+import { performanceReportEnhance } from './modules/performance-report';
+import { settingsEnhance } from './modules/settings';
 import { createApp } from 'vue';
-import App from './view/App.vue';
+import App from './kernel/ui/App.vue';
 
 /**
  * @module Main
  * @description 应用主入口。激活网络劫持引擎、鉴权状态机与 DOM 基建，随后以声明式清单装载全部增强模块
- * （开关/路由/拦截器/样式由增强内核统一管理），并负责外挂交互框架的挂载。
+ * （开关/路由/拦截器/样式/面板入口由增强内核统一管理），并负责外挂交互框架的挂载。
  */
 (function() {
     'use strict';
@@ -27,7 +29,9 @@ import App from './view/App.vue';
             projectStateEnhance,
             bigScreenEnhance,
             barcodePrintEnhance,
-            materialInventoryEnhance
+            materialInventoryEnhance,
+            performanceReportEnhance,
+            settingsEnhance
         ])
         .start();
     

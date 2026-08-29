@@ -1,7 +1,9 @@
 import { domMaster } from '../core/DomMaster';
 import { NetworkHook, matchUrl, type IResponseInterceptor } from '../core/NetworkHook';
 import { settings } from '../config/settings';
-import { uiStore } from './uiStore';
+import { PANEL_SORT_DEFAULT } from '../config/constants';
+import { uiStore } from './ui/uiStore';
+import { panelStore } from './ui/panelStore';
 import type { IEnhanceModule, IResponseInterceptorSpec, ModuleContext } from './module.types';
 
 export class EnhanceManager {
@@ -64,6 +66,18 @@ export class EnhanceManager {
             uiStore.register(module.id, module.component);
         }
 
+        if (module.panelEntry) {
+            panelStore.register({
+                id: module.id,
+                label: module.panelEntry.label,
+                icon: module.panelEntry.icon,
+                sort: module.panelEntry.sort ?? PANEL_SORT_DEFAULT,
+                action: module.panelEntry.action,
+                text: module.panelEntry.text,
+                disabled: module.panelEntry.disabled
+            });
+        }
+
         try {
             module.init(this.ctx);
             this.activeModules.add(module.id);
@@ -92,6 +106,8 @@ export class EnhanceManager {
         if (module.component) {
             uiStore.unregister(module.id);
         }
+
+        panelStore.unregister(module.id);
 
         this.activeModules.delete(module.id);
     }
