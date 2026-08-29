@@ -1,8 +1,11 @@
 # HHJGBIM_Enhance 项目长期记忆
 
-## 架构约定（2026-08-20 确立，同日升级 DomMaster）
+## 架构约定（2026-08-20 确立；2026-08-29 view 包解耦重构）
 
-- **分层**：`main.ts`（初始化编排）→ `core/`（增强引擎 + 基建：网络拦截、DOM 基建）→ `services/`（数据服务）→ `config/`、`utils/`、`view/`（Vue UI）。
+- **分层**：`main.ts`（初始化编排）→ `core/`（增强引擎 + 基建：网络拦截、DOM 基建）→ `services/`（数据服务，全局单例网关，禁止被业务模块收编）→ `config/`、`utils/`、`kernel/ui/`（Vue UI 内核 Shell）、`modules/`（业务模块，各含 index + store + view）。`view/` 已解散，旧文件为 @deprecated 弃用壳。
+- **Shell 定位**：`src/kernel/ui/App.vue`（Vue 根 + 动态插槽 + 面板）与 `uiStore.ts` 组成内核 UI 子系统；**Shell 不是插件，不进插件清单**，由 main.ts 静态挂载。
+- **面板入口注册表（2026-08-29 确立）**：`src/kernel/ui/panelStore.ts`，模块通过 `IEnhanceModule.panelEntry { label, icon?, sort?, action, text?, disabled? }` 显式声明即挂载（反向注入，Shell 零业务 import）。EnhanceManager activate/deactivate 自动注册/反注册。排序码常量：`PANEL_SORT_DEFAULT = 1`、`PANEL_SORT_SETTINGS = 999`（config/constants.ts）。**禁用按属性分类推断挂载**。
+- **模块私有 store 模式**：业务视图组件由 `component` 字段注册至 uiStore 动态沙箱，显隐由模块私有 store（如 `settingsStore`、`reportStore`）驱动，数据流"模块类拉取 → 写入 store → 视图响应式渲染"，不用 props 跨模块传数据（模块内部父子组件 props 仍可用，如 PerformanceReport → Chart）。
 - **宿主页面 Web 操作必须走 `core/DomMaster.ts`**（单例 `domMaster`，main 中 `domMaster.init()` 激活）：
   - 通用 DOM 原语：样式注入/移除、DOM 等待、类名/样式操作、元素构建、可拖拽面板、MutationObserver、点击/输入模拟、vxe 表格页脚重算、URL 匹配。
   - 页面情报缓存：SPA 路由监听（hash/popstate/history 钩子）→ 400ms 防抖重扫，缓存 URL/标题/可见文本索引；`getSnapshot()`、`onRouteChange(cb)`、`findByText(text, {exact?, scope?})`（按文本查元素，scope 传容器时跳过索引实时扫描）。

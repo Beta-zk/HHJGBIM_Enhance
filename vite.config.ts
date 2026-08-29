@@ -23,7 +23,7 @@ export default defineConfig({
          * 采用外部 CDN 链接解耦静态资产，避免 Base64 导致的代码体积膨胀。
          * 示例链接指向本项目的 GitHub 仓库，推荐使用 jsDelivr 进行国内加速。
          */
-        icon: "https://cdn.jsdelivr.net/gh/Beta-zk/HHJGBIM_Enhance@main/public/icon.png",
+        icon: "https://cdn.jsdelivr.net/gh/Beta-zk/HHJGBIM_Enhance@master/public/icon.png",
         grant: ["GM_xmlhttpRequest"],
         connect: [
           "integ-plat-proj-api.bimtk.com",
