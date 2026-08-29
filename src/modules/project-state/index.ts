@@ -1,5 +1,4 @@
 import { watch, type WatchStopHandle } from 'vue';
-import { API_URLS } from '../../config/constants';
 import { projectService } from '../../services/ProjectService';
 import { systemService } from '../../services/SystemService';
 import { ProjectListHost } from '../../host/projectList';
@@ -20,20 +19,6 @@ class ProjectStateEnhance implements IEnhanceModule {
     public readonly settingsKey = 'enableProjectState';
 
     public readonly component = ProjectFilterPanel;
-
-    public readonly interceptors = [{
-        id: 'INTERCEPTOR_PROJECT_FILTER',
-        urlMatcher: [API_URLS.WAREHOUSE_DATA_STATS, API_URLS.GET_RAW_WH_SUMMARY_LIST].map(endpoint => ({ pathname: endpoint })),
-        onResponse: (originalJson: any) => {
-            if (this.dictPromise) {
-                this.dictPromise.then(() => {
-                    if (!this.checkBlacklistMatch()) {
-                        this.extractFilterStates(originalJson);
-                    }
-                });
-            }
-        }
-    }];
 
     private ctx!: ModuleContext;
     private isCrawlerReady: boolean = false;
@@ -180,22 +165,6 @@ class ProjectStateEnhance implements IEnhanceModule {
         if (projectStateStore.states.length > 0) {
             projectStateStore.isVisible = true;
         }
-    }
-
-    private extractFilterStates(originalJson?: any): void {
-        if (this.checkBlacklistMatch()) return;
-
-        const viewStates = new Set<string>();
-        if (originalJson && originalJson.Data && Array.isArray(originalJson.Data.Data)) {
-            originalJson.Data.Data.forEach((item: any) => {
-                const name = item.Project_Name || item.Name || '';
-                const state = this.matchMap.get(name);
-                if (state) viewStates.add(state);
-            });
-        }
-
-        this.populateFilterStates(viewStates);
-        this.debounceScan();
     }
 
     private activateGlobalObserver(): void {
