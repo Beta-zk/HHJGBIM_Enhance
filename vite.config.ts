@@ -26,9 +26,6 @@ export default defineConfig({
         icon: "https://cdn.jsdelivr.net/gh/Beta-zk/HHJGBIM_Enhance@master/public/icon.png",
         grant: ["GM_xmlhttpRequest"],
         connect: [
-          // 通用字典接口（GetDictionaryDetailListByCode），未登记将触发 GM_xmlhttpRequest 拒绝连接
-          "integ-plat-api.bimtk.com",
-          // [备用] 旧 PLM 项目实体分页接口域名，字典源切换后保留以备回退
           "integ-plat-proj-api.bimtk.com",
           "integ-plat-produce-api.bimtk.com",
           "127.0.0.1"
