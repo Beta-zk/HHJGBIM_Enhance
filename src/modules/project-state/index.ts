@@ -116,7 +116,8 @@ class ProjectStateEnhance implements IEnhanceModule {
         if (this.isCrawlerReady) {
             items = plmJson.Data?.Data || plmJson.Data || plmJson || [];
         } else {
-            items = plmJson.Data?.Data || [];
+            // 新字典接口 GetDictionaryDetailListByCode 返回 { Data: [...] }，Data 直接是对象数组
+            items = plmJson.Data || [];
         }
 
         this.matchMap.clear();

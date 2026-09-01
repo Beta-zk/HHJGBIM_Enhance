@@ -5,7 +5,9 @@
  */
 export const API_URLS = {
     WAREHOUSE_DATA_STATS: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionCount/GetProjectWarehouseDataStatistics',
-    PLM_PROJECT_ENTITIES: 'https://integ-plat-proj-api.bimtk.com/PLM/Plm_Projects/GetEntities',
+    // [备用] 旧项目实体分页接口，2026-09-01 切换为 GetDictionaryDetailListByCode 字典源后停用，保留以备回退：
+    // PLM_PROJECT_ENTITIES: 'https://integ-plat-proj-api.bimtk.com/PLM/Plm_Projects/GetEntities',
+    PLM_PROJECT_DICTIONARY: 'https://integ-plat-api.bimtk.com/Platform/Dictionary/GetDictionaryDetailListByCode',
     MONTHLY_FACTORY_OUTPUT: 'https://integ-plat-produce-api.bimtk.com/PRO/ProductionCount/MonthlyFactoyOutput',
     LOCAL_PROJECT_INFO_PATH: '/project/info',
     LOCAL_COMPONENT_WEIGHT_PATH: '/component/yearWeight',

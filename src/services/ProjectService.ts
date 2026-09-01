@@ -11,9 +11,18 @@ class ProjectService {
   private cachedPlmJson: any = null;
   private fetchPromise: Promise<any> | null = null;
 
-  private readonly defaultPayload = {
-    PageInfo: { Page: 1, PageSize: 100, SortName: "", SortOrder: "" },
-  };
+  /**
+   * @constant PROJECT_STATUS_DICT_CODE
+   * @description 项目状态字典编码，GetDictionaryDetailListByCode 的请求标识（宿主字典管理中的 project_status 字典）。
+   */
+  private readonly PROJECT_STATUS_DICT_CODE = 'project_status';
+
+  // ==================== [备用] 旧接口载荷：PLM_Projects/GetEntities ====================
+  // 原项目实体分页载荷，2026-09-01 切换 GetDictionaryDetailListByCode 字典源后停用，保留以备回退：
+  // private readonly defaultPayload = {
+  //   PageInfo: { Page: 1, PageSize: 100, SortName: "", SortOrder: "" },
+  // };
+  // ================================================================================
 
   /**
    * @method fetchProjectEntities
@@ -50,9 +59,14 @@ class ProjectService {
         }
     }
 
+    // ==================== [备用] 旧接口：PLM_Projects/GetEntities ====================
+    // 原分页实体接口，2026-09-01 切换 GetDictionaryDetailListByCode 字典源后停用，保留以备回退：
+    // return await GMHttpClient.postWithAuth(API_URLS.PLM_PROJECT_ENTITIES, this.defaultPayload);
+    // ================================================================================
+
     return await GMHttpClient.postWithAuth(
-      API_URLS.PLM_PROJECT_ENTITIES,
-      this.defaultPayload,
+      API_URLS.PLM_PROJECT_DICTIONARY,
+      { dictionaryCode: this.PROJECT_STATUS_DICT_CODE },
     );
   }
 }
