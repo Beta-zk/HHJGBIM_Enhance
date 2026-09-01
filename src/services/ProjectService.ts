@@ -65,7 +65,7 @@ class ProjectService {
     // ================================================================================
 
     return await GMHttpClient.postWithAuth(
-      API_URLS.PLM_PROJECT_DICTIONARY,
+      API_URLS.GET_DICTIONARY_DETAIL_LIST_BY_CODE,
       { dictionaryCode: this.PROJECT_STATUS_DICT_CODE },
     );
   }
