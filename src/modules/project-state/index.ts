@@ -124,8 +124,7 @@ class ProjectStateEnhance implements IEnhanceModule {
         this.uniqueStates.clear();
 
         items.forEach((item: any) => {
-            // 新字典接口状态字段为 Display_Name；本地爬虫源仍为 State_Name，双源兼容兜底
-            const state = item.Display_Name || item.State_Name || '未知';
+            const state = item.State_Name || '未知';
             if (String(state) === '0') return;
 
             const keyCandidates = [item.Name, item.Project_Name, item.Short_Name, state].filter(Boolean);
