@@ -22,6 +22,8 @@
 - pnpm 命令用 `node "C:\Program Files\nodejs\node_modules\corepack\dist\pnpm.js" exec <cmd>`。
 - `vite build` 前必须先 `rm -rf dist`（vite prepareOutDir 清空被 WorkBuddy safe-delete 拦截，直接报 Build failed）。
 - 类型检查：`pnpm exec tsc --noEmit`。
+- **新增宿主接口域名必须同步登记 `vite.config.ts` userscript.connect 白名单**（2026-09-01 事故：新字典域名未登记 → GM_xmlhttpRequest 拒绝连接）。@connect 为安装期元数据，改动后需**重新安装脚本**才生效。
+- 通用字典接口：`GET_DICTIONARY_DETAIL_LIST_BY_CODE`（`integ-plat-api.bimtk.com/Platform/Dictionary/GetDictionaryDetailListByCode`），POST body `{ dictionaryCode: 'xxx' }` 可取任意字典，响应 `{ Data: [...] }`，状态字段为 `Display_Name`；旧 PLM 项目实体接口 `PLM_PROJECT_ENTITIES`（`integ-plat-proj-api.bimtk.com`）已注释停用标注备用。
 
 ## 已知页面结构
 
